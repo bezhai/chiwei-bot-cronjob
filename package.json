@@ -1,0 +1,17 @@
+{
+  "name": "chiwei-bot-cronjob",
+  "version": "1.0.0",
+  "description": "一些定时任务",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.12.8",
+    "typescript": "^5.4.5"
+  }
+}
