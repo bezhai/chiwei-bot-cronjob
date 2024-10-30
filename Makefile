@@ -33,7 +33,7 @@ stop:
 # 运行新的容器实例
 .PHONY: run
 run: stop
-	docker run -d --name $(DOCKER_CONTAINER_NAME) $(DOCKER_IMAGE_NAME)
+	docker run -d --env-file .env --name $(DOCKER_CONTAINER_NAME) $(DOCKER_IMAGE_NAME)
 
 # 清理旧的 Docker 镜像和容器
 .PHONY: clean
