@@ -38,10 +38,6 @@ async function pixivProxy<T>(
   params: Record<string, any> = {}
 ): Promise<T> {
   // 构建请求体
-  const reqBody: PixivProxyRequestBody = {
-    url: baseUrl,
-    referer: referer,
-  };
 
   const urlEncode = (params: Record<string, any>) => {
     const encode = new URLSearchParams();
@@ -68,6 +64,11 @@ async function pixivProxy<T>(
   if (Object.keys(params).length > 0) {
     baseUrl += `?${urlEncode(params)}`;
   }
+
+  const reqBody: PixivProxyRequestBody = {
+    url: baseUrl,
+    referer: referer,
+  };
 
   const salt = generateSalt(10);
   const token = generateToken(
