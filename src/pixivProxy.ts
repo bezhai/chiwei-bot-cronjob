@@ -69,7 +69,7 @@ async function pixivProxy<T>(
   const reqBody: PixivProxyRequestBody = {
     url: baseUrl,
     referer: referer,
-    debug: true,
+    // debug: true,
   };
 
   const salt = generateSalt(10);
