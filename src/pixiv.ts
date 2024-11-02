@@ -41,6 +41,10 @@ async function getFollowersByTag(tag: string): Promise<FollowerInfo[]> {
         throw new Error(response.message || "Failed to fetch followers");
       }
 
+      console.log(
+        `Fetched ${body.users.length} followers for page ${page} of total ${body.total}`
+      );
+
       // 添加当前页的用户到总的关注者列表中
       followers.push(...body.users);
       total = body.total;
@@ -54,7 +58,7 @@ async function getFollowersByTag(tag: string): Promise<FollowerInfo[]> {
 
     // 等待2秒以避免频繁请求
     await new Promise((resolve) => setTimeout(resolve, 2000));
-  } while (followers.length < total);
+  } while (page * pageSize <= total);
 
   return followers;
 }
