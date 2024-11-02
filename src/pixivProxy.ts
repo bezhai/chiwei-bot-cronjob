@@ -5,6 +5,7 @@ import crypto from "crypto";
 interface PixivProxyRequestBody {
   url: string;
   referer: string;
+  debug?: boolean;
 }
 
 // 生成盐
@@ -68,6 +69,7 @@ async function pixivProxy<T>(
   const reqBody: PixivProxyRequestBody = {
     url: baseUrl,
     referer: referer,
+    debug: true,
   };
 
   const salt = generateSalt(10);
