@@ -52,7 +52,7 @@ async function pixivProxy<T>(
           }
         }
       } else {
-        const strVal = String(v || "");
+        const strVal = String(v ?? "");
         if (strVal !== "") {
           encode.append(k, strVal);
         }

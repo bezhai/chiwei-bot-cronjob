@@ -6,7 +6,7 @@ dotenv.config();
 
 // 定义并启动定时任务
 (() => {
-  const task = cron.schedule('50 0 * * *', () => {
+  const task = cron.schedule('0 1 * * *', () => {
     console.log('Starting download task...');
     startDownload();  // 调用下载任务的逻辑
   });
