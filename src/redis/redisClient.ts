@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 
-const redisUrl = `redis://default:${process.env.REDIS_PASSWORD}@redis:6379`;
+const redisUrl = `redis://:${process.env.REDIS_PASSWORD}@redis:6379`;
 
 const redisClient = new Redis(redisUrl);
 
