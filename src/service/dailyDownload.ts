@@ -1,12 +1,12 @@
-import send_msg from "./lark";
-import { getMaxIllustId, insertDownloadTask } from "./mongo/service";
+import send_msg from "../lark";
+import { getMaxIllustId, insertDownloadTask } from "../mongo/service";
 import {
   getAuthorArtwork,
   getFollowersByTag,
   getTagArtwork,
-} from "./pixiv/pixiv";
-import { FollowerInfo } from "./pixiv/types";
-import redisClient from "./redis/redisClient";
+} from "../pixiv/pixiv";
+import { FollowerInfo } from "../pixiv/types";
+import redisClient from "../redis/redisClient";
 
 const RedisDownloadUserDictKey = "download_user_dict";
 

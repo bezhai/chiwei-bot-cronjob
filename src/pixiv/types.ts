@@ -60,8 +60,38 @@ export interface IllustrationPageDetail {
   height: number;
 }
 
-export interface BaseResponse {
+export interface PaginationResponse<T> {
+  total: number;
+  page?: number;
+  page_size?: number;
+  data: T[];
+}
+
+export interface ImageForLark {
+  image_key?: string;
+  pixiv_addr: string;
+  width?: number;
+  height?: number;
+}
+
+export interface BaseResponse<T> {
   code: number;
   msg: string;
-  data?: any;
+  data: T;
+}
+
+export enum StatusMode {
+  NOT_DELETE = 0,
+  VISIBLE = 1,
+  DELETE = 2,
+  ALL = 3,
+  NO_VISIBLE = 4,
+}
+
+export interface ListPixivImageDto {
+  status: StatusMode;
+  page: number;
+  page_size: number;
+  random_mode: boolean;
+  start_time: number;
 }

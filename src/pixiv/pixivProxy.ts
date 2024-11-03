@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 import crypto from "crypto";
-import { BaseResponse } from "./types";
+import { BaseResponse, ImageForLark, ListPixivImageDto, PaginationResponse } from "./types";
 
 // 定义请求体的接口
 interface PixivProxyRequestBody {
@@ -122,7 +122,7 @@ export async function getContent(url: string): Promise<void> {
 
   try {
     // 使用 sendAuthenticatedRequest 发送请求
-    const response = await sendAuthenticatedRequest<BaseResponse>(
+    const response = await sendAuthenticatedRequest<BaseResponse<void>>(
       "http://www.yuanzhi.xyz/api/v2/image-store/download",
       reqBody
     );
@@ -134,6 +134,30 @@ export async function getContent(url: string): Promise<void> {
   } catch (error: any) {
     // 捕获错误并抛出
     console.error("Error in getContent:", error);
+    throw new Error(error.message || "Unknown error");
+  }
+}
+
+export async function getPixivImages(params: ListPixivImageDto): Promise<ImageForLark[]> {
+  try {
+    const url = 'http://www.yuanzhi.xyz/api/v2/image-store/token-auth-list';
+
+    // 发送带有身份认证的请求
+    const response = await sendAuthenticatedRequest<BaseResponse<PaginationResponse<ImageForLark>>>(
+      url,
+      params
+    );
+
+    // 检查响应的 code 字段
+    if (response.code !== 0) {
+      throw new Error(response.msg);
+    }
+
+    console.log("Response data:", response.data);
+
+    return response.data.data;
+  } catch (error: any) {
+    console.error("Error in getPixivImages:", error);
     throw new Error(error.message || "Unknown error");
   }
 }

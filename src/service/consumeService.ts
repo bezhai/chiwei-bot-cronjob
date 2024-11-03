@@ -10,7 +10,6 @@ import {
 } from "../mongo/service";
 import { EnumIllustType, GetIllustInfoBody } from "./types";
 import {
-  getIllustInfo,
   getIllustInfoWithCache,
   getIllustPageDetail,
 } from "../pixiv/pixiv";

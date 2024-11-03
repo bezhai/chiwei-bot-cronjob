@@ -1,0 +1,1 @@
+export const dailySendPhoto = async (): Promise<void> => {};
