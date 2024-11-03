@@ -1,6 +1,5 @@
-import axios from "axios";
+import redisClient from "../redis/redisClient";
 import pixivProxy from "./pixivProxy";
-import { getValue } from "../redis/redisService";
 
 /**
  * 获取用户指定标签下的关注列表
@@ -80,7 +79,7 @@ async function getAuthorArtwork(userId: string): Promise<string[]> {
       PixivGenericResponse<AuthorArtworkResponseBody>
     >(authorUrl, referer, {
       lang: "zh",
-      version: await getValue("version"),
+      version: await redisClient.get("version"),
     });
 
     // 确保 API 请求成功并返回有效数据
@@ -121,7 +120,7 @@ async function getTagArtwork(tag: string, page: number): Promise<string[]> {
         s_mode: "s_tag",
         type: "illust_and_ugoira",
         lang: "zh",
-        version: await getValue("version"),
+        version: await redisClient.get("version"),
       }
     );
 

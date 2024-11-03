@@ -5,7 +5,7 @@ import {
   getFollowersByTag,
   getTagArtwork,
 } from "./pixiv/pixiv";
-import { getSetMembers, hGetValue, hSetValue } from "./redis/redisService";
+import redisClient from "./redis/redisClient";
 
 const RedisDownloadUserDictKey = "download_user_dict";
 
@@ -47,7 +47,7 @@ const downloadEachUser = async (author: FollowerInfo): Promise<void> => {
 
   try {
     // 从 Redis 获取对应作者的下载时间，使用封装的 hGetValue 函数
-    const lastDownloadTime = await hGetValue(
+    const lastDownloadTime = await redisClient.hget(
       RedisDownloadUserDictKey,
       authorId
     );
@@ -73,7 +73,7 @@ const downloadEachUser = async (author: FollowerInfo): Promise<void> => {
     }
 
     // 更新 Redis 中的下载时间，使用封装的 hSetValue 函数
-    await hSetValue(
+    await redisClient.hset(
       RedisDownloadUserDictKey,
       authorId,
       `${Math.floor(Date.now() / 1000)}`
@@ -172,7 +172,7 @@ export const DownloadIllusts = async (
     }
 
     // 从 Redis 获取 ban_illusts 列表
-    const banIllusts = await getSetMembers("ban_illusts");
+    const banIllusts = await redisClient.smembers("ban_illusts");
 
     // 过滤掉被禁止的作品
     if (banIllusts) {
