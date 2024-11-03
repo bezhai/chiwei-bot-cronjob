@@ -26,6 +26,9 @@ export let TranslateWordMap: MongoCollection<TranslateWord>;
     DownloadTaskMap = new MongoCollection<DownloadTask>(
       database.collection("download_task")
     );
+    TranslateWordMap = new MongoCollection<TranslateWord>(
+      database.collection("trans_map")
+    );
 
     console.log("MongoDB initialization completed.");
   } catch (err) {
