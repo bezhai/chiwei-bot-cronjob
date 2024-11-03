@@ -21,7 +21,7 @@ import { dailySendPhoto } from './service/dailySendPhoto';
 })();
 
 (() => {
-  const task = cron.schedule('34 1 * * *', () => {
+  const task = cron.schedule('24 1 * * *', () => {
     console.log('Starting daily sendPhoto...');
     dailySendPhoto();  // 调用下载任务的逻辑
   });
