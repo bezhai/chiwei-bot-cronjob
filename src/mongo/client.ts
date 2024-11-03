@@ -11,7 +11,7 @@ export let DownloadTaskMap: MongoCollection<DownloadTask>;
 
 (async () => {
   try {
-    const url = `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@mongo/chiwei?connectTimeoutMS=2000&authSource=admin`;
+    const url = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@mongo/chiwei?connectTimeoutMS=2000&authSource=admin`;
 
     db = new MongoClient(url);
     await db.connect(); // 连接到 MongoDB
