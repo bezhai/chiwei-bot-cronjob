@@ -49,7 +49,7 @@ export async function insertDownloadTask(
   r18Index: number
 ): Promise<boolean> {
   // 查询是否已经存在相同 illustId 的任务
-  const filter: Filter<DownloadTask> = { illustId };
+  const filter: Filter<DownloadTask> = { illust_id: illustId };
 
   // 使用封装的 find 方法查找是否已经存在此任务
   const existingTasks = await DownloadTaskMap.find(filter);

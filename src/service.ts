@@ -82,8 +82,8 @@ const downloadEachUser = async (author: FollowerInfo): Promise<void> => {
     // 执行下载逻辑
     const downloadRequest = {
       authorId: authorId,
-      r18Index: 3, // 假设这是某个参数
-      authorLastFilter: true, // 假设这是某个参数
+      r18Index: 3,
+      authorLastFilter: true,
     };
 
     const result = await DownloadIllusts(downloadRequest);
@@ -123,6 +123,9 @@ export const DownloadIllusts = async (
     // 1. 如果传入了 authorId，则获取该作者的作品
     if (req.authorId) {
       illustIds = await getAuthorArtwork(req.authorId);
+      console.log(
+        `作者：${req.authorId} 查询到 ${illustIds.length} 张图片`
+      );
     }
 
     // 2. 如果传递了 keyword，则获取与该关键词相关的作品
@@ -164,6 +167,9 @@ export const DownloadIllusts = async (
           `作者：${req.authorId} 历史没有数据，请注意`
         );
       } else {
+        console.log(
+          `作者：${req.authorId} 历史最大作品ID为 ${maxIllustId}, 过滤掉作者最后作品`
+        );
         illustIds = illustIds.slice(
           0,
           illustIds.indexOf(maxIllustId.toString())

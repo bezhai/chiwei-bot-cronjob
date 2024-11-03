@@ -33,42 +33,42 @@ export enum DownloadTaskStatus {
 }
 
 export class DownloadTask {
-  illustId: string;
-  r18Index: number;
+  illust_id: string;
+  r18_index: number;
   status: DownloadTaskStatus;
-  createTime: Date;
-  updateTime: Date;
-  retryTime: number;
-  lastRunTime: Date;
-  lastRunError: string;
+  create_time: Date;
+  update_time: Date;
+  retry_time: number;
+  last_run_time: Date;
+  last_run_error: string;
 
   static MaxRetryTime = 3;
 
   constructor(illustId: string, r18Index: number) {
-    this.illustId = illustId;
-    this.r18Index = r18Index;
+    this.illust_id = illustId;
+    this.r18_index = r18Index;
     this.status = DownloadTaskStatus.Pending;
-    this.createTime = new Date();
-    this.updateTime = new Date();
-    this.retryTime = 0;
-    this.lastRunTime = new Date();
-    this.lastRunError = "";
+    this.create_time = new Date();
+    this.update_time = new Date();
+    this.retry_time = 0;
+    this.last_run_time = new Date();
+    this.last_run_error = "";
   }
 
   // 开始下载
   startToDownload(): DownloadTask {
-    this.lastRunError = "";
-    this.lastRunTime = new Date();
-    this.updateTime = new Date();
-    this.retryTime++;
+    this.last_run_error = "";
+    this.last_run_time = new Date();
+    this.update_time = new Date();
+    this.retry_time++;
     this.status = DownloadTaskStatus.Running;
     return this;
   }
 
   // 下载成功
   success(): DownloadTask {
-    this.lastRunError = "";
-    this.updateTime = new Date();
+    this.last_run_error = "";
+    this.update_time = new Date();
     this.status = DownloadTaskStatus.Success;
     return this;
   }
@@ -76,10 +76,10 @@ export class DownloadTask {
   // 下载失败，如果失败次数超过最大值，设置为死信
   fail(err?: Error): DownloadTask {
     if (err) {
-      this.lastRunError = err.message;
+      this.last_run_error = err.message;
     }
-    this.updateTime = new Date();
-    if (this.retryTime >= DownloadTask.MaxRetryTime) {
+    this.update_time = new Date();
+    if (this.retry_time >= DownloadTask.MaxRetryTime) {
       this.status = DownloadTaskStatus.Dead;
     } else {
       this.status = DownloadTaskStatus.Fail;
