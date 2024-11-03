@@ -109,7 +109,7 @@ async function downloadIllust(illustId: string, r18Index: number) {
   let isR18Illust = false;
   for (const tag of tags) {
     const filterTag =
-      tag.getTranslation().getEn() + tag.getTranslation().getZh() + tag.tag;
+      (tag.translation?.en ?? "") + (tag.translation?.zh ?? "") + tag.tag;
     if (filterTag.includes("R-18")) {
       isR18Illust = true;
     }
@@ -144,8 +144,8 @@ async function downloadIllust(illustId: string, r18Index: number) {
 
     const translation = await searchAndAddTranslate(
       tag.tag,
-      tag.getTranslation().getEn(),
-      tag.getTranslation().getZh()
+      tag.translation?.en ?? "",
+      tag.translation?.zh ?? ""
     );
     multiTags.push({
       name: tag.tag,
