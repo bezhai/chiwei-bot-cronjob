@@ -1,5 +1,8 @@
 import redisClient from "../redis/redisClient";
-import pixivProxy from "./pixivProxy";
+import { GetIllustInfoBody } from "../service/types";
+import { cacheProxy } from "../utils/cache";
+import { pixivProxy } from "./pixivProxy";
+import { FollowerInfo, PixivGenericResponse, FollowerBody, AuthorArtworkResponseBody, TagArtworkResponseBody, IllustData, IllustrationPageDetail } from "./types";
 
 /**
  * 获取用户指定标签下的关注列表
@@ -139,4 +142,78 @@ async function getTagArtwork(tag: string, page: number): Promise<string[]> {
   }
 }
 
-export { getFollowersByTag, getAuthorArtwork, getTagArtwork };
+/**
+ * 根据插画 ID 获取插画信息
+ * @param illustId 插画的 ID
+ * @returns 包含插画信息的对象
+ * @throws 请求失败时抛出错误
+ */
+async function getIllustInfo(illustId: string): Promise<GetIllustInfoBody> {
+  // 构造 API 请求的 URL 和 Referer
+  const illustUrl = `https://www.pixiv.net/ajax/illust/${encodeURIComponent(illustId)}`;
+  const referer = `https://www.pixiv.net/artworks/${encodeURIComponent(illustId)}`;
+
+  try {
+    // 调用 pixivProxy 以发送请求
+    const response = await pixivProxy<PixivGenericResponse<GetIllustInfoBody>>(
+      illustUrl,
+      referer,
+    );
+
+    // 检查 API 响应中的错误
+    if (response.error || !response.body) {
+      throw new Error(response.message || "Failed to fetch illustration info");
+    }
+
+    // 返回插画信息
+    return response.body;
+  } catch (err) {
+    console.error(`Error fetching illustration info for ID ${illustId}:`, err);
+    throw new Error(`Error fetching illustration info for ID ${illustId}:`);
+  }
+}
+
+async function getIllustInfoWithCache(illustId: string): Promise<GetIllustInfoBody> {
+  const cacheKey = `illustInfo_${illustId}`;  // 使用插画ID作为缓存键
+
+  // 使用 cacheProxy 包裹请求逻辑
+  return cacheProxy(cacheKey, async () => {
+    const resp = await getIllustInfo(illustId);
+    return new GetIllustInfoBody(resp);
+  });
+}
+
+/**
+ * 根据插画 ID 获取插画的页面详情
+ * @param illustId 插画的 ID
+ * @returns 包含插画页面详情的数组
+ * @throws 请求失败时抛出错误
+ */
+export async function getIllustPageDetail(illustId: string): Promise<IllustrationPageDetail[]> {
+  const illustUrl = `https://www.pixiv.net/ajax/illust/${encodeURIComponent(illustId)}/pages`;
+  const referer = `https://www.pixiv.net/artworks/${encodeURIComponent(illustId)}`;
+
+  try {
+    // 调用 pixivProxy 发送请求
+    const response = await pixivProxy<PixivGenericResponse<IllustrationPageDetail[]>>(
+      illustUrl,
+      referer,
+      {
+        lang: 'zh', // 请求参数
+      }
+    );
+
+    // 检查响应中的错误
+    if (response.error || !response.body) {
+      throw new Error(response.message || 'Failed to fetch illustration page details');
+    }
+
+    // 返回插画页面详情
+    return response.body;
+  } catch (err) {
+    console.error(`Error fetching illustration page details for ID ${illustId}:`, err);
+    throw err;
+  }
+}
+
+export { getFollowersByTag, getAuthorArtwork, getTagArtwork, getIllustInfoWithCache, getIllustInfo};

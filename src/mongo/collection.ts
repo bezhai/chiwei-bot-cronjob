@@ -10,6 +10,7 @@ import {
   Document,
   WithId,
   OptionalUnlessRequiredId,
+  MatchKeysAndValues,
 } from "mongodb";
 
 export class MongoCollection<T extends Document> {
@@ -58,7 +59,7 @@ export class MongoCollection<T extends Document> {
 
   async updateMany(
     filter: Filter<T>,
-    update: Partial<T>,
+    update: MatchKeysAndValues<T>,
     options?: UpdateOptions
   ): Promise<void> {
     await this.collection.updateMany(filter, { $set: update }, options);

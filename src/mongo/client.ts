@@ -1,6 +1,6 @@
 import { MongoClient } from "mongodb";
 import { MongoCollection } from "./collection";
-import { DownloadTask, PixivImageInfo } from "./types";
+import { DownloadTask, PixivImageInfo, TranslateWord } from "./types";
 
 // MongoDB 客户端实例
 let db: MongoClient;
@@ -8,6 +8,7 @@ let db: MongoClient;
 // 定义 MongoDB 集合实例
 export let ImgCollection: MongoCollection<PixivImageInfo>;
 export let DownloadTaskMap: MongoCollection<DownloadTask>;
+export let TranslateWordMap: MongoCollection<TranslateWord>;
 
 (async () => {
   try {

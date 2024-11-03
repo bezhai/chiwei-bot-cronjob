@@ -87,3 +87,27 @@ export class DownloadTask {
     return this;
   }
 }
+
+// 额外信息
+export interface Extra {
+  zh: string; // 中文翻译提示
+  en: string; // 英文翻译提示
+}
+
+// 翻译词条
+export interface TranslateWord {
+  origin: string; // 原字段
+  translation?: string; // 翻译
+  has_translate: boolean; // 是否已翻译
+  extra_info?: Extra; // 额外信息
+}
+
+// 图片上传请求参数
+export interface UploadImgV2Req {
+  pixiv_name: string; // Pixiv 图片名称
+  need_download: boolean; // 是否需要下载
+  author: string; // 作者名称
+  author_id?: string; // 作者 ID，可能为空
+  is_r18: boolean; // 是否为 R18 内容
+  title: string; // 图片标题
+}

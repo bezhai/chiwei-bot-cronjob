@@ -1,5 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 import crypto from "crypto";
+import { BaseResponse } from "./types";
 
 // 定义请求体的接口
 interface PixivProxyRequestBody {
@@ -27,13 +28,46 @@ const generateToken = (salt: string, body: string, secret: string): string => {
 };
 
 /**
+ * sendAuthenticatedRequest - 发送带有鉴权信息的 POST 请求
+ * @param url 请求的 URL
+ * @param reqBody 请求体
+ * @returns 响应体
+ */
+async function sendAuthenticatedRequest<T>(
+  url: string,
+  reqBody: Record<string, any>
+): Promise<T> {
+  const salt = generateSalt(10);
+  const token = generateToken(
+    salt,
+    JSON.stringify(reqBody),
+    process.env.HTTP_SECRET
+  );
+
+  try {
+    const response: AxiosResponse<T> = await axios.post<T>(url, reqBody, {
+      headers: {
+        "X-Salt": salt,
+        "X-Token": token,
+        "Content-Type": "application/json",
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error("Error in sendAuthenticatedRequest:", error);
+    throw new Error(`Request failed: ${error.message}`);
+  }
+}
+
+/**
  * pixivProxy - 发送带有 referer 和参数的 POST 请求
  * @param baseUrl 要请求的 Base URL
  * @param referer 请求头中的 Referer
  * @param params 请求的查询参数
  * @returns 响应体
  */
-async function pixivProxy<T>(
+export async function pixivProxy<T>(
   baseUrl: string,
   referer: string,
   params: Record<string, any> = {}
@@ -72,32 +106,34 @@ async function pixivProxy<T>(
     // debug: true,
   };
 
-  const salt = generateSalt(10);
-  const token = generateToken(
-    salt,
-    JSON.stringify(reqBody),
-    process.env.HTTP_SECRET
-  );
-
-  try {
-    // 发送带有 params 和自定义请求头的 POST 请求
-    const response: AxiosResponse<T> = await axios.post<T>(
-      "http://www.yuanzhi.xyz/api/v2/proxy",
-      reqBody,
-      {
-        headers: {
-          "X-Salt": salt,
-          "X-Token": token,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    return response.data;
-  } catch (error: any) {
-    console.error("Error in pixivProxy:", error);
-    throw new Error(`Request failed: ${error.message}`);
-  }
+  return await sendAuthenticatedRequest<T>("http://www.yuanzhi.xyz/api/v2/proxy", reqBody)
 }
 
-export default pixivProxy;
+/**
+ * getContent - 请求指定 URL 的内容
+ * @param url 要请求的 Pixiv URL
+ * @returns Promise<void> 表示成功或失败
+ */
+export async function getContent(url: string): Promise<void> {
+  // 构建请求体
+  const reqBody = {
+    pixiv_url: url, // 对应 Go 中的 PixivUrl 字段
+  };
+
+  try {
+    // 使用 sendAuthenticatedRequest 发送请求
+    const response = await sendAuthenticatedRequest<BaseResponse>(
+      "http://www.yuanzhi.xyz/api/v2/image-store/download",
+      reqBody
+    );
+
+    // 检查响应的 code 字段
+    if (response.code !== 0) {
+      throw new Error(response.msg);
+    }
+  } catch (error: any) {
+    // 捕获错误并抛出
+    console.error("Error in getContent:", error);
+    throw new Error(error.message || "Unknown error");
+  }
+}

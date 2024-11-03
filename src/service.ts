@@ -5,6 +5,7 @@ import {
   getFollowersByTag,
   getTagArtwork,
 } from "./pixiv/pixiv";
+import { FollowerInfo } from "./pixiv/types";
 import redisClient from "./redis/redisClient";
 
 const RedisDownloadUserDictKey = "download_user_dict";
