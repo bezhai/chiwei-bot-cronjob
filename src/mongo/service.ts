@@ -74,7 +74,7 @@ export async function insertDownloadTask(
   }
 
   // 创建新的下载任务
-  const newTask = new DownloadTask(illustId, r18Index);
+  const newTask = DownloadTask.createTask(illustId, r18Index);
 
   // 插入新任务
   await DownloadTaskMap.insertOne(newTask);
@@ -102,7 +102,7 @@ export async function SearchUnDownloadTask(): Promise<DownloadTask | null> {
     return null;
   }
 
-  const task = existingTasks[0]; // 获取第一个任务
+  const task = new DownloadTask(existingTasks[0]); // 获取第一个任务
 
   // 2. 更新任务状态为“开始下载”
   const updateFilter: Filter<DownloadTask> = { illust_id: task.illust_id };

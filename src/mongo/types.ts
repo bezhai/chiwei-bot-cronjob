@@ -32,6 +32,17 @@ export enum DownloadTaskStatus {
   Success = 5, // 成功
 }
 
+export interface DownloadTaskParams {
+  illust_id: string;
+  r18_index: number;
+  status: DownloadTaskStatus;
+  create_time: Date;
+  update_time: Date;
+  retry_time: number;
+  last_run_time?: Date;
+  last_run_error?: string;
+}
+
 export class DownloadTask {
   illust_id: string;
   r18_index: number;
@@ -39,20 +50,34 @@ export class DownloadTask {
   create_time: Date;
   update_time: Date;
   retry_time: number;
-  last_run_time: Date;
-  last_run_error: string;
+  last_run_time?: Date;
+  last_run_error?: string;
 
   static MaxRetryTime = 3;
 
-  constructor(illustId: string, r18Index: number) {
-    this.illust_id = illustId;
-    this.r18_index = r18Index;
-    this.status = DownloadTaskStatus.Pending;
-    this.create_time = new Date();
-    this.update_time = new Date();
-    this.retry_time = 0;
-    this.last_run_time = new Date();
-    this.last_run_error = "";
+  constructor(params: DownloadTaskParams) {
+    // 明确赋值必填参数
+    this.illust_id = params.illust_id;
+    this.r18_index = params.r18_index;
+    this.status = params.status;
+    this.create_time = params.create_time;
+    this.update_time = params.update_time;
+    this.retry_time = params.retry_time;
+
+    // 赋值可选参数
+    this.last_run_time = params.last_run_time;
+    this.last_run_error = params.last_run_error;
+  }
+
+  static createTask(illust_id: string, r18_index: number): DownloadTask {
+    return new DownloadTask({
+      illust_id,
+      r18_index,
+      status: DownloadTaskStatus.Pending,
+      create_time: new Date(),
+      update_time: new Date(),
+      retry_time: 0,
+    });
   }
 
   // 开始下载
