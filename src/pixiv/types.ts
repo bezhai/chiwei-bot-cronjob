@@ -17,17 +17,8 @@ interface FollowerBody {
   users: FollowerInfo[];
 }
 
-class AuthorArtworkResponseBody {
+interface AuthorArtworkResponseBody {
   illusts: Record<string, any>;
-
-  constructor(illusts: Record<string, any> = {}) {
-    this.illusts = illusts;
-  }
-
-  // 返回 illusts 的键（即作品ID）的数组
-  getIllustIDs(): string[] {
-    return Object.keys(this.illusts);
-  }
 }
 
 // 定义单个作品的详细信息

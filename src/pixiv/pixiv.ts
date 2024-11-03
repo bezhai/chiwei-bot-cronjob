@@ -89,7 +89,7 @@ async function getAuthorArtwork(userId: string): Promise<string[]> {
     }
 
     // 返回作品 ID 列表
-    return body.getIllustIDs();
+    return Object.keys(body.illusts);
   } catch (err) {
     console.error(`Error fetching artwork for user ${userId}:`, err);
     throw err;
