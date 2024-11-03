@@ -2,6 +2,7 @@
 DOCKER_IMAGE_NAME = cronjob
 DOCKER_CONTAINER_NAME = chiwei_cronjob
 DOCKER_PORT = 3000
+NETWORK = chiwei_bot_default
 
 # 拉取最新代码并重新构建镜像和容器
 # 默认目标：重新构建和运行
@@ -33,7 +34,7 @@ stop:
 # 运行新的容器实例
 .PHONY: run
 run: stop
-	docker run -d --env-file .env --name $(DOCKER_CONTAINER_NAME) $(DOCKER_IMAGE_NAME)
+	docker run -d --env-file .env --name $(DOCKER_CONTAINER_NAME) --network $(NETWORK) $(DOCKER_IMAGE_NAME)
 
 # 清理旧的 Docker 镜像和容器
 .PHONY: clean

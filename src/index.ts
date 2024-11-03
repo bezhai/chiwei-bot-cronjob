@@ -1,12 +1,12 @@
-import cron from 'node-cron';  // 导入 node-cron
-import { startDownload } from './service';
 import * as dotenv from 'dotenv';  // 导入 dotenv
 dotenv.config();
 
+import cron from 'node-cron';  // 导入 node-cron
+import { startDownload } from './service';
 
 // 定义并启动定时任务
 (() => {
-  const task = cron.schedule('2 2 * * *', () => {
+  const task = cron.schedule('39 13 * * *', () => {
     console.log('Starting download task...');
     startDownload();  // 调用下载任务的逻辑
   });
