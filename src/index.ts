@@ -6,7 +6,7 @@ import { startDownload } from './service';
 
 // 定义并启动定时任务
 (() => {
-  const task = cron.schedule('39 13 * * *', () => {
+  const task = cron.schedule('20 14 * * *', () => {
     console.log('Starting download task...');
     startDownload();  // 调用下载任务的逻辑
   });
