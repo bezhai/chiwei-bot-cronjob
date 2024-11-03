@@ -89,11 +89,11 @@ async function downloadIllust(illustId: string, r18Index: number) {
 
   await setTimeout(3000);
 
-  const userId = illustInfo.getUserID();
-  const tags = illustInfo.getTags()?.getTags() || [];
+  const userId = illustInfo.user_id;
+  const tags = illustInfo.tags?.tags || [];
 
   // 如果是 GIF 类型，跳过下载
-  if (illustInfo.getIllustType() === EnumIllustType.IllustTypeGif) {
+  if (illustInfo.illust_type === EnumIllustType.IllustTypeGif) {
     console.info(`插画 ${illustId} 是 GIF，跳过下载`);
     return;
   }
@@ -189,10 +189,10 @@ async function downloadIllust(illustId: string, r18Index: number) {
       await addImage(multiTags, {
         pixiv_name: pixivAddr,
         need_download: true,
-        author: illustInfo.getUserName(),
+        author: illustInfo.user_name,
         author_id: userId,
         is_r18: isR18Illust,
-        title: illustInfo.getIllustTitle(),
+        title: illustInfo.illust_title,
       });
     } catch (uploadError) {
       console.error(

@@ -178,8 +178,7 @@ async function getIllustInfoWithCache(illustId: string): Promise<GetIllustInfoBo
 
   // 使用 cacheProxy 包裹请求逻辑
   return cacheProxy(cacheKey, async () => {
-    const resp = await getIllustInfo(illustId);
-    return new GetIllustInfoBody(resp);
+    return await getIllustInfo(illustId);
   });
 }
 

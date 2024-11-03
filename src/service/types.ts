@@ -21,16 +21,8 @@ export class Translation {
   }
 }
 
-export class Tags {
-  tags: Tag[] = [];
-
-  constructor(data?: Partial<Tags>) {
-    Object.assign(this, data);
-  }
-
-  getTags(): Tag[] {
-    return this.tags || [];
-  }
+export interface Tags {
+  tags: Tag[];
 }
 
 export class Tag {
@@ -70,35 +62,10 @@ export class Tag {
   }
 }
 
-export class GetIllustInfoBody {
+export interface GetIllustInfoBody {
   tags?: Tags;
-  user_name: string = "";
-  user_id: string = "";
-  illust_title: string = "";
-  illust_type: EnumIllustType = EnumIllustType.IllustUnknown;
-
-  constructor(data?: Partial<GetIllustInfoBody>) {
-    Object.assign(this, data);
-  }
-
-  // 方法来获取 Tags
-  getTags(): Tags | undefined {
-    return this?.tags;
-  }
-
-  getUserName(): string {
-    return this.user_name || "";
-  }
-
-  getUserID(): string {
-    return this.user_id || "";
-  }
-
-  getIllustTitle(): string {
-    return this.illust_title || "";
-  }
-
-  getIllustType(): EnumIllustType {
-    return this.illust_type || EnumIllustType.IllustUnknown;
-  }
+  user_name: string;
+  user_id: string;
+  illust_title: string;
+  illust_type: EnumIllustType;
 }
