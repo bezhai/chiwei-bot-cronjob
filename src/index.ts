@@ -4,6 +4,7 @@ dotenv.config();
 import cron from 'node-cron';  // 导入 node-cron
 import { startDownload } from './service';
 import { consumeDownloadTaskAsync } from './service/consumeService';
+import { mongoInitPromise } from './mongo/client';
 
 // 定义并启动定时任务
 (() => {
@@ -19,6 +20,7 @@ import { consumeDownloadTaskAsync } from './service/consumeService';
 })();
 
 (async () => {
+  await mongoInitPromise;  // 等待 MongoDB 初始化完成
   try {
     await consumeDownloadTaskAsync();  // 启动异步任务的消费逻辑
   } catch (err) {

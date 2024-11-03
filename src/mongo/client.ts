@@ -10,7 +10,7 @@ export let ImgCollection: MongoCollection<PixivImageInfo>;
 export let DownloadTaskMap: MongoCollection<DownloadTask>;
 export let TranslateWordMap: MongoCollection<TranslateWord>;
 
-(async () => {
+export const mongoInitPromise = (async () => {
   try {
     const url = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@mongo/chiwei?connectTimeoutMS=2000&authSource=admin`;
 
