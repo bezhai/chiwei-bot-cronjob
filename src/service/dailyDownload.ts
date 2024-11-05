@@ -1,4 +1,4 @@
-import send_msg from "../lark";
+import { send_msg } from "../lark";
 import { getMaxIllustId, insertDownloadTask } from "../mongo/service";
 import {
   getAuthorArtwork,

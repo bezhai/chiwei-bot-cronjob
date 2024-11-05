@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 import crypto from "crypto";
-import { BaseResponse, ImageForLark, ListPixivImageDto, PaginationResponse } from "./types";
+import { BaseResponse, ImageForLark, ListPixivImageDto, PaginationResponse, UploadImageToLarkDto, UploadLarkResp } from "./types";
 
 // 定义请求体的接口
 interface PixivProxyRequestBody {
@@ -155,6 +155,29 @@ export async function getPixivImages(params: ListPixivImageDto): Promise<ImageFo
 
 
     return response.data.data;
+  } catch (error: any) {
+    console.error("Error in getPixivImages:", error);
+    throw new Error(error.message || "Unknown error");
+  }
+}
+
+export async function uploadToLark(params: UploadImageToLarkDto): Promise<UploadLarkResp> {
+  try {
+    const url = 'http://www.yuanzhi.xyz/api/v2/image-store/upload-lark';
+
+    // 发送带有身份认证的请求
+    const response = await sendAuthenticatedRequest<BaseResponse<UploadLarkResp>>(
+      url,
+      params
+    );
+
+    // 检查响应的 code 字段
+    if (response.code !== 0) {
+      throw new Error(response.msg);
+    }
+
+
+    return response.data;
   } catch (error: any) {
     console.error("Error in getPixivImages:", error);
     throw new Error(error.message || "Unknown error");

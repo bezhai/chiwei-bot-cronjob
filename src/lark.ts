@@ -1,11 +1,12 @@
 import * as lark from "@larksuiteoapi/node-sdk";
+import { LarkCard } from "./larkCard/card";
 
 const client = new lark.Client({
   appId: process.env.APP_ID,
   appSecret: process.env.APP_SECRET,
 });
 
-async function send_msg(chat_id: string, message: string) {
+export async function send_msg(chat_id: string, message: string) {
   client.im.message
     .create({
       params: {
@@ -22,4 +23,19 @@ async function send_msg(chat_id: string, message: string) {
     });
 }
 
-export default send_msg;
+export async function send_card(chat_id: string, card: LarkCard) {
+  client.im.message
+    .create({
+      params: {
+        receive_id_type: "chat_id",
+      },
+      data: {
+        receive_id: chat_id,
+        content: JSON.stringify(card),
+        msg_type: "interactive",
+      },
+    })
+    .catch((e) => {
+      console.error(JSON.stringify(e.response.data, null, 4));
+    });
+}

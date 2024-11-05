@@ -95,3 +95,13 @@ export interface ListPixivImageDto {
   random_mode: boolean;
   start_time: number;
 }
+
+export interface UploadImageToLarkDto {
+  pixiv_addr: string;
+}
+
+export interface UploadLarkResp {
+  image_key?: string;
+  width?: number;
+  height?: number;
+}
