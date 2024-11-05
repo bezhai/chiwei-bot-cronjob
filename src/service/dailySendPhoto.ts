@@ -10,5 +10,11 @@ export const dailySendPhoto = async (): Promise<void> => {
         random_mode: true,
         start_time: dayjs().add(-1, 'day').valueOf(),
     });
-    console.log(`有 ${images.length} 张图片可以发送`);
+
+    for (let image of images) {
+        if (!image.image_key) {
+            
+        }
+    }
+    
 };

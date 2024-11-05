@@ -79,20 +79,15 @@ async function downloadIllust(illustId: string, r18Index: number) {
   }
 
   // 获取插画信息（缓存包装器）
-  let illustInfo: GetIllustInfoBody;
-  try {
-    illustInfo = await getIllustInfoWithCache(illustId);
-  } catch (error) {
-    throw error;
-  }
+  const illustInfo = await getIllustInfoWithCache(illustId);
 
   await setTimeout(3000);
 
-  const userId = illustInfo.user_id;
+  const userId = illustInfo.userId;
   const tags = illustInfo.tags?.tags || [];
 
   // 如果是 GIF 类型，跳过下载
-  if (illustInfo.illust_type === EnumIllustType.IllustTypeGif) {
+  if (illustInfo.illustType === EnumIllustType.IllustTypeGif) {
     console.info(`插画 ${illustId} 是 GIF，跳过下载`);
     return;
   }
@@ -188,10 +183,10 @@ async function downloadIllust(illustId: string, r18Index: number) {
       await addImage(multiTags, {
         pixiv_name: pixivAddr,
         need_download: true,
-        author: illustInfo.user_name,
+        author: illustInfo.userName,
         author_id: userId,
         is_r18: isR18Illust,
-        title: illustInfo.illust_title,
+        title: illustInfo.illustTitle,
       });
     } catch (uploadError) {
       console.error(

@@ -41,7 +41,7 @@ async function sendAuthenticatedRequest<T>(
   const token = generateToken(
     salt,
     JSON.stringify(reqBody),
-    process.env.HTTP_SECRET
+    process.env.HTTP_SECRET!
   );
 
   try {
@@ -153,7 +153,6 @@ export async function getPixivImages(params: ListPixivImageDto): Promise<ImageFo
       throw new Error(response.msg);
     }
 
-    console.log("Response data:", response.data);
 
     return response.data.data;
   } catch (error: any) {

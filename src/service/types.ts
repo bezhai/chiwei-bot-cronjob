@@ -17,15 +17,15 @@ export interface Tag {
   tag: string;
   locked: boolean;
   deletable: boolean;
-  user_id: string;
-  user_name: string;
+  userId: string;
+  userName: string;
   translation?: Translation;
 }
 
 export interface GetIllustInfoBody {
   tags?: Tags;
-  user_name: string;
-  user_id: string;
-  illust_title: string;
-  illust_type: EnumIllustType;
+  userName: string;
+  userId: string;
+  illustTitle: string;
+  illustType: EnumIllustType;
 }
