@@ -17,9 +17,6 @@ async function send_msg(chat_id: string, message: string) {
         msg_type: "text",
       },
     })
-    .then((res) => {
-      console.log(res);
-    })
     .catch((e) => {
       console.error(JSON.stringify(e.response.data, null, 4));
     });
