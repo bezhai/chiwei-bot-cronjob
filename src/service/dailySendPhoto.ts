@@ -7,7 +7,7 @@ import { ImgComponent } from "../larkCard/image";
 import { send_card } from "../lark";
 
 export const dailySendPhoto = async (): Promise<void> => {
-  const images = await getPixivImages({
+  let images = await getPixivImages({
     status: StatusMode.NOT_DELETE,
     page: 1,
     page_size: 6,
@@ -15,12 +15,13 @@ export const dailySendPhoto = async (): Promise<void> => {
     start_time: dayjs().add(-1, "day").valueOf(),
   });
 
-  for (let image of images) {
+  images = await Promise.all(images.map(async (image) => {
     if (!image.image_key) {
-      const uploadResp = uploadToLark({ pixiv_addr: image.pixiv_addr });
-      image = { ...image, ...uploadResp };
+      const uploadResp = await uploadToLark({ pixiv_addr: image.pixiv_addr });
+      return { ...image, ...uploadResp };
     }
-  }
+    return image;
+  }));
 
   if (images.length <= 0) {
     return;
