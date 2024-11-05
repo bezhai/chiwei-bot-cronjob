@@ -58,5 +58,5 @@ export const dailySendPhoto = async (): Promise<void> => {
       )
   );
 
-  send_card("oc_d156e14d4cc9dad9fb362289ef950c60", card);
+  send_card("oc_a79ce7cc8cc4afdcfd519532d0a917f5", card);
 };
