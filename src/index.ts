@@ -9,7 +9,7 @@ import { dailySendPhoto } from './service/dailySendPhoto';
 
 // 定义并启动定时任务
 (() => {
-  const task = cron.schedule('33 15 * * *', () => {
+  const task = cron.schedule('0 10 * * *', () => {
     console.log('Starting download task...');
     startDownload();  // 调用下载任务的逻辑
   });
@@ -21,7 +21,7 @@ import { dailySendPhoto } from './service/dailySendPhoto';
 })();
 
 (() => {
-  const task = cron.schedule('29 23 * * *', () => {
+  const task = cron.schedule('42 0 * * *', () => {
     console.log('Starting daily sendPhoto...');
     dailySendPhoto();  // 调用下载任务的逻辑
   });
