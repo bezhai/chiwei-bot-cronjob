@@ -1,11 +1,11 @@
 import { CardElement } from "./element";
-import { Header } from "./title";
+import { CardHeader } from "./title";
 
 export class LarkCard {
-  header: Header;
+  header: CardHeader;
   elements: CardElement[];
 
-  constructor(header: Header) {
+  constructor(header: CardHeader) {
     this.header = header;
     this.elements = [];
   }

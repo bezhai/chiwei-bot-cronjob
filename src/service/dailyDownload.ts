@@ -32,12 +32,12 @@ export const startDownload = async (): Promise<void> => {
       }
     } else {
       // 如果没有关注者，发送消息
-      await send_msg(process.env.SELF_CHAT_ID, "没有找到关注者");
+      await send_msg(process.env.SELF_CHAT_ID!, "没有找到关注者");
     }
   } catch (err) {
     // 如果获取关注者出错，发送错误消息
     console.error("Error fetching followers:", err);
-    await send_msg(process.env.SELF_CHAT_ID, "下载图片服务获取元信息失败");
+    await send_msg(process.env.SELF_CHAT_ID!, "下载图片服务获取元信息失败");
   }
 };
 
@@ -100,7 +100,7 @@ const downloadEachUser = async (author: FollowerInfo): Promise<void> => {
   } catch (err) {
     // 错误处理，如果下载失败则发送消息
     console.error(`Download failed for author: ${authorId}:`, err);
-    await send_msg(process.env.SELF_CHAT_ID, `作者：${authorId} 图片下载失败`);
+    await send_msg(process.env.SELF_CHAT_ID!, `作者：${authorId} 图片下载失败`);
   }
 };
 
@@ -164,7 +164,7 @@ export const DownloadIllusts = async (
       );
       if (!maxIllustId) {
         await send_msg(
-          process.env.SELF_CHAT_ID,
+          process.env.SELF_CHAT_ID!,
           `作者：${req.authorId} 历史没有数据，请注意`
         );
       } else {
@@ -199,13 +199,13 @@ export const DownloadIllusts = async (
     if (req.authorId) {
       console.log(`作者：${req.authorId}开始下载${illustIds.length}张图片`);
       await send_msg(
-        process.env.SELF_CHAT_ID,
+        process.env.SELF_CHAT_ID!,
         `作者：${req.authorId} 开始下载 ${illustIds.length} 张图片`
       );
     } else if (req.keyword) {
       console.log(`关键词：${req.keyword}开始下载${illustIds.length}张图片`);
       await send_msg(
-        process.env.SELF_CHAT_ID,
+        process.env.SELF_CHAT_ID!,
         `关键词：${req.keyword} 开始下载 ${illustIds.length} 张图片`
       );
     }

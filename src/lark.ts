@@ -2,8 +2,8 @@ import * as lark from "@larksuiteoapi/node-sdk";
 import { LarkCard } from "./larkCard/card";
 
 const client = new lark.Client({
-  appId: process.env.APP_ID,
-  appSecret: process.env.APP_SECRET,
+  appId: process.env.APP_ID!,
+  appSecret: process.env.APP_SECRET!,
 });
 
 export async function send_msg(chat_id: string, message: string) {

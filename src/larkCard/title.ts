@@ -1,3 +1,4 @@
+import { TitleColor } from "./color";
 import { PlainText } from "./text";
 
 // 定义 TextTag 接口
@@ -33,35 +34,26 @@ export interface UdIcon {
 }
 
 // 定义 Header 接口
-export class Header {
+export class CardHeader {
   title: PlainText; // 主标题
   subtitle?: PlainText; // 副标题（可选）
   text_tag_list?: TextTag[]; // 标签列表（可选）
   i18n_text_tag_list?: I18nTextTagList; // 国际化标签列表（可选）
-  template?:
-    | "blue"
-    | "wathet"
-    | "tuiquoise"
-    | "green"
-    | "yellow"
-    | "orange"
-    | "red"
-    | "carmine"
-    | "violet"
-    | "purple"
-    | "indigo"
-    | "grey"
-    | "default"; // 主题颜色
+  template?: TitleColor; // 主题颜色
   icon?: Icon; // 自定义前缀图标（可选）
   ud_icon?: UdIcon; // 图标库中的前缀图标（可选）
 
   constructor(title: string) {
-    this.title = new PlainText(title);    
+    this.title = new PlainText(title);
   }
-  
+
+  color(color: TitleColor): CardHeader {
+    this.template = color;
+    return this;
+  }
 }
 
 // 卡片结构的接口
 export interface Card {
-  header: Header; // 卡片的 header 字段
+  header: CardHeader; // 卡片的 header 字段
 }
