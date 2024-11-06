@@ -32,8 +32,8 @@ export async function consumeDownloadTaskAsync() {
       const task = await SearchUnDownloadTask();
 
       if (!task) {
-        console.log(`No pending tasks found. Waiting for 6 seconds...`);
-        sleepTime = sleepTime >= 60 ? sleepTime : sleepTime * 2;
+        sleepTime = (sleepTime >= 60 ? sleepTime : sleepTime * 2);
+        console.log(`No pending tasks found. Waiting for ${sleepTime} seconds...`);
         await setTimeout(sleepTime * 1000);
         continue;
       }
