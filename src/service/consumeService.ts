@@ -38,6 +38,8 @@ export async function consumeDownloadTaskAsync() {
         continue;
       }
 
+      sleepTime = 1
+
       // 2. 尝试获取下载许可
       await downloadLimiter.tryDownload(); // 等待限流器允许下载
 
