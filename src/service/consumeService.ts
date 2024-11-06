@@ -27,12 +27,14 @@ export async function consumeDownloadTaskAsync() {
   // 无限循环处理任务
   while (true) {
     try {
+      let sleepTime = 1
       // 1. 获取未下载的任务
       const task = await SearchUnDownloadTask();
 
       if (!task) {
         console.log(`No pending tasks found. Waiting for 6 seconds...`);
-        await setTimeout(6000); // 没有任务时，等待 6 秒
+        sleepTime = sleepTime >= 60 ? sleepTime : sleepTime * 2;
+        await setTimeout(sleepTime * 1000);
         continue;
       }
 
