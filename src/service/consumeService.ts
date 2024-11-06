@@ -24,10 +24,10 @@ export async function consumeDownloadTaskAsync() {
   // 创建下载限制器，限制每 60 次下载，时间窗口为 4 分钟
   const downloadLimiter = new DownloadLimiter(60, 4 * 60 * 1000); // 4分钟 = 4 * 60 * 1000 毫秒
 
+  let sleepTime = 1
   // 无限循环处理任务
   while (true) {
     try {
-      let sleepTime = 1
       // 1. 获取未下载的任务
       const task = await SearchUnDownloadTask();
 
