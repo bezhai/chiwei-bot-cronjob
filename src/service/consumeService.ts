@@ -9,10 +9,7 @@ import {
   Success,
 } from "../mongo/service";
 import { EnumIllustType, GetIllustInfoBody } from "./types";
-import {
-  getIllustInfoWithCache,
-  getIllustPageDetail,
-} from "../pixiv/pixiv";
+import { getIllustInfoWithCache, getIllustPageDetail } from "../pixiv/pixiv";
 import redisClient from "../redis/redisClient";
 import { MultiTag } from "../mongo/types";
 import { getContent } from "../pixiv/pixivProxy";
@@ -24,7 +21,7 @@ export async function consumeDownloadTaskAsync() {
   // 创建下载限制器，限制每 60 次下载，时间窗口为 4 分钟
   const downloadLimiter = new DownloadLimiter(60, 4 * 60 * 1000); // 4分钟 = 4 * 60 * 1000 毫秒
 
-  let sleepTime = 1
+  let sleepTime = 1;
   // 无限循环处理任务
   while (true) {
     try {
@@ -32,20 +29,22 @@ export async function consumeDownloadTaskAsync() {
       const task = await SearchUnDownloadTask();
 
       if (!task) {
-        sleepTime = (sleepTime >= 60 ? sleepTime : sleepTime * 2);
-        console.log(`No pending tasks found. Waiting for ${sleepTime} seconds...`);
+        sleepTime = sleepTime >= 60 ? sleepTime : sleepTime * 2;
+        console.log(
+          `No pending tasks found. Waiting for ${sleepTime} seconds...`
+        );
         await setTimeout(sleepTime * 1000);
         continue;
       }
 
-      sleepTime = 1
+      sleepTime = 1;
 
       // 2. 尝试获取下载许可
       await downloadLimiter.tryDownload(); // 等待限流器允许下载
 
       try {
         // 3. 下载任务
-        await downloadIllust(task.illust_id, task.r18_index);
+        await downloadIllust(task.illust_id);
         console.log(`Download successful for task: ${task.illust_id}`);
 
         // 4. 标记任务成功
@@ -73,15 +72,9 @@ export async function consumeDownloadTaskAsync() {
 /**
  * 下载插画
  * @param illustId - 插画的 ID
- * @param r18Index - R18 索引
  * @throws 如果下载失败，将抛出错误
  */
-async function downloadIllust(illustId: string, r18Index: number) {
-  // 如果 r18Index <= 0，设置为 10
-  if (r18Index <= 0) {
-    r18Index = 10;
-  }
-
+async function downloadIllust(illustId: string) {
   // 获取插画信息（缓存包装器）
   const illustInfo = await getIllustInfoWithCache(illustId);
 

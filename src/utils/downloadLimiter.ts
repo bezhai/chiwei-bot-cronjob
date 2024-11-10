@@ -30,7 +30,7 @@ class DownloadLimiter {
   }
 
   // 模拟冷却期
-  async cooldownPeriod() {
+  private async cooldownPeriod() {
     this.coolingDown = true;
     return new Promise<void>((resolve) => {
       setTimeout(() => {

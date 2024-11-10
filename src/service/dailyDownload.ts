@@ -83,7 +83,6 @@ const downloadEachUser = async (author: FollowerInfo): Promise<void> => {
     // 执行下载逻辑
     const downloadRequest = {
       authorId: authorId,
-      r18Index: 3,
       authorLastFilter: true,
     };
 
@@ -111,7 +110,6 @@ interface DownloadIllustsReq {
   limitIllusts?: string[];
   startIndex?: string;
   endIndex?: string;
-  r18Index: number;
   authorLastFilter: boolean;
 }
 
@@ -213,7 +211,7 @@ export const DownloadIllusts = async (
     // 遍历所有作品ID，插入下载任务
     for (const illustId of illustIds) {
       try {
-        const insertSuccess = await insertDownloadTask(illustId, req.r18Index);
+        const insertSuccess = await insertDownloadTask(illustId);
         if (insertSuccess) {
           console.log(`插入任务 ${illustId} 成功`);
         } else {

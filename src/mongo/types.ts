@@ -34,7 +34,6 @@ export enum DownloadTaskStatus {
 
 export interface DownloadTaskParams {
   illust_id: string;
-  r18_index: number;
   status: DownloadTaskStatus;
   create_time: Date;
   update_time: Date;
@@ -45,7 +44,6 @@ export interface DownloadTaskParams {
 
 export class DownloadTask {
   illust_id: string;
-  r18_index: number;
   status: DownloadTaskStatus;
   create_time: Date;
   update_time: Date;
@@ -58,7 +56,6 @@ export class DownloadTask {
   constructor(params: DownloadTaskParams) {
     // 明确赋值必填参数
     this.illust_id = params.illust_id;
-    this.r18_index = params.r18_index;
     this.status = params.status;
     this.create_time = params.create_time;
     this.update_time = params.update_time;
@@ -69,10 +66,9 @@ export class DownloadTask {
     this.last_run_error = params.last_run_error;
   }
 
-  static createTask(illust_id: string, r18_index: number): DownloadTask {
+  static createTask(illust_id: string): DownloadTask {
     return new DownloadTask({
       illust_id,
-      r18_index,
       status: DownloadTaskStatus.Pending,
       create_time: new Date(),
       update_time: new Date(),

@@ -54,14 +54,10 @@ export async function getMaxIllustId(illustIds: number[]): Promise<number> {
 /**
  * 插入新的下载任务
  * @param illustId - 插画的 ID
- * @param r18Index - R18 索引
  * @returns 返回一个 Promise，表示是否成功插入新任务
  * @throws 如果在数据库操作中发生错误，将抛出错误
  */
-export async function insertDownloadTask(
-  illustId: string,
-  r18Index: number
-): Promise<boolean> {
+export async function insertDownloadTask(illustId: string): Promise<boolean> {
   // 查询是否已经存在相同 illustId 的任务
   const filter: Filter<DownloadTask> = { illust_id: illustId };
 
@@ -74,7 +70,7 @@ export async function insertDownloadTask(
   }
 
   // 创建新的下载任务
-  const newTask = DownloadTask.createTask(illustId, r18Index);
+  const newTask = DownloadTask.createTask(illustId);
 
   // 插入新任务
   await DownloadTaskMap.insertOne(newTask);

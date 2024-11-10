@@ -5,7 +5,7 @@ import cron from 'node-cron';  // 导入 node-cron
 import { startDownload } from './service/dailyDownload';
 import { consumeDownloadTaskAsync } from './service/consumeService';
 import { mongoInitPromise } from './mongo/client';
-import { dailySendPhoto } from './service/dailySendPhoto';
+import { dailySendNewPhoto, sendDailyPhoto } from './service/dailySendPhoto';
 
 // 定义并启动定时任务
 (() => {
@@ -21,9 +21,21 @@ import { dailySendPhoto } from './service/dailySendPhoto';
 })();
 
 (() => {
-  const task = cron.schedule('30 19 * * *', () => {
+  const task = cron.schedule('16 12 * * *', () => {
     console.log('Starting daily sendPhoto...');
-    dailySendPhoto();  // 调用下载任务的逻辑
+    sendDailyPhoto();  // 调用下载任务的逻辑
+  });
+
+  // 启动定时任务
+  task.start();
+
+  console.log('Cron job scheduled for midnight every day.');
+})();
+
+(() => {
+  const task = cron.schedule('30 19 * * *', () => {
+    console.log('Starting daily sendNewPhoto...');
+    dailySendNewPhoto();  // 调用下载任务的逻辑
   });
 
   // 启动定时任务

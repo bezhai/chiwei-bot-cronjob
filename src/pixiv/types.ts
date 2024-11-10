@@ -93,7 +93,7 @@ export interface ListPixivImageDto {
   page: number;
   page_size: number;
   random_mode: boolean;
-  start_time: number;
+  start_time?: number;
 }
 
 export interface UploadImageToLarkDto {

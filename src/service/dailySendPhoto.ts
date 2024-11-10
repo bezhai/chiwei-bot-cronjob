@@ -8,7 +8,38 @@ import { send_card } from "../lark";
 import { calcBestChunks } from "../utils/calc_photo";
 import { Column, ColumnSet } from "../larkCard/column";
 
-export const dailySendPhoto = async (): Promise<void> => {
+// 发图给订阅群聊
+export const sendDailyPhoto = async (): Promise<void> => {
+  let images = await getPixivImages({
+    status: StatusMode.VISIBLE,
+    page: 1,
+    page_size: 1,
+    random_mode: true,
+  });
+
+  images = await Promise.all(
+    images.map(async (image) => {
+      if (!image.image_key) {
+        const uploadResp = await uploadToLark({ pixiv_addr: image.pixiv_addr });
+        return { ...image, ...uploadResp };
+      }
+      return image;
+    })
+  );
+
+  if (images.length <= 0) {
+    return;
+  }
+
+  const card = new LarkCard(
+    new CardHeader("今天的每日一图").color("green")
+  ).addElements(new ImgComponent(images[0].image_key!, images[0].pixiv_addr));
+
+  send_card("oc_0d2e26c81fdf0823997a7bb40d71dcc1", card);
+};
+
+// 发新图给特定群聊
+export const dailySendNewPhoto = async (): Promise<void> => {
   let images = await getPixivImages({
     status: StatusMode.NOT_DELETE,
     page: 1,
