@@ -1,12 +1,9 @@
 import dayjs from "dayjs";
 import { getPixivImages, uploadToLark } from "../pixiv/pixivProxy";
 import { StatusMode } from "../pixiv/types";
-import { LarkCard } from "../larkCard/card";
-import { CardHeader } from "../larkCard/title";
-import { ImgComponent } from "../larkCard/image";
 import { send_card } from "../lark";
 import { calcBestChunks } from "../utils/calc_photo";
-import { Column, ColumnSet } from "../larkCard/column";
+import { LarkCard, CardHeader, ImgComponent, ColumnSet, Column } from "feishu-card";
 
 // 发图给订阅群聊
 export const sendDailyPhoto = async (): Promise<void> => {

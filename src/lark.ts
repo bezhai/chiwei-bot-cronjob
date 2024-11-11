@@ -1,5 +1,5 @@
 import * as lark from "@larksuiteoapi/node-sdk";
-import { LarkCard } from "./larkCard/card";
+import { LarkCard } from "feishu-card";
 
 const client = new lark.Client({
   appId: process.env.APP_ID!,
