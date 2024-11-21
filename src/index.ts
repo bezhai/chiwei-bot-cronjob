@@ -22,10 +22,10 @@ const scheduleTask = (cronTime: string, taskName: string, taskFn: () => void) =>
 scheduleTask('0 10 * * *', 'download task', startDownload);
 
 // 定时任务：发送每日照片
-scheduleTask('3 21 * * *', 'daily sendPhoto', sendDailyPhoto);
+scheduleTask('0 18 * * *', 'daily sendPhoto', sendDailyPhoto);
 
 // 定时任务：发送每日新照片
-scheduleTask('4 21 * * *', 'daily sendNewPhoto', dailySendNewPhoto);
+scheduleTask('29 19 * * *', 'daily sendNewPhoto', dailySendNewPhoto);
 
 // 异步消费任务
 (async () => {
