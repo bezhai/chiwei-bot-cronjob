@@ -19,13 +19,13 @@ const scheduleTask = (cronTime: string, taskName: string, taskFn: () => void) =>
 };
 
 // 定时任务：下载任务
-scheduleTask('50 20 * * *', 'download task', startDownload);
+scheduleTask('0 10 * * *', 'download task', startDownload);
 
 // 定时任务：发送每日照片
-scheduleTask('0 18 * * *', 'daily sendPhoto', sendDailyPhoto);
+scheduleTask('3 21 * * *', 'daily sendPhoto', sendDailyPhoto);
 
 // 定时任务：发送每日新照片
-scheduleTask('30 19 * * *', 'daily sendNewPhoto', dailySendNewPhoto);
+scheduleTask('4 21 * * *', 'daily sendNewPhoto', dailySendNewPhoto);
 
 // 异步消费任务
 (async () => {
