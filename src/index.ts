@@ -19,7 +19,7 @@ const scheduleTask = (cronTime: string, taskName: string, taskFn: () => void) =>
 };
 
 // 定时任务：下载任务
-scheduleTask('16 13 * * *', 'download task', startDownload);
+scheduleTask('21 13 * * *', 'download task', startDownload);
 
 // 定时任务：发送每日照片
 scheduleTask('0 18 * * *', 'daily sendPhoto', sendDailyPhoto);
