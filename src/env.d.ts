@@ -19,5 +19,6 @@ declare namespace NodeJS {
     OSS_BUCKET: string;
     DATA_HOST_IP: string;
     CHAT_API_KEY: string;
+    REDIS_HOST: string;
   }
 }
