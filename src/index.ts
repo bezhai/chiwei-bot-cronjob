@@ -11,7 +11,11 @@ import { dailySendNewPhoto, sendDailyPhoto } from './service/dailySendPhoto';
 const scheduleTask = (cronTime: string, taskName: string, taskFn: () => void) => {
   const task = cron.schedule(cronTime, () => {
     console.log(`Starting ${taskName}...`);
-    taskFn();
+    try {
+      taskFn();
+    } catch (err) {
+      console.error(`Error in ${taskName}:`, err);
+    }
   });
 
   task.start();
@@ -19,7 +23,7 @@ const scheduleTask = (cronTime: string, taskName: string, taskFn: () => void) =>
 };
 
 // 定时任务：下载任务
-scheduleTask('21 13 * * *', 'download task', startDownload);
+scheduleTask('0 10 * * *', 'download task', startDownload);
 
 // 定时任务：发送每日照片
 scheduleTask('0 18 * * *', 'daily sendPhoto', sendDailyPhoto);
