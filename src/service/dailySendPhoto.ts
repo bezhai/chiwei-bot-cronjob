@@ -2,8 +2,8 @@ import dayjs from "dayjs";
 import { getPixivImages, uploadToLark } from "../pixiv/pixivProxy";
 import { StatusMode } from "../pixiv/types";
 import { send_card } from "../lark";
-import { calcBestChunks } from "../utils/calc_photo";
-import { LarkCard, CardHeader, ImgComponent, ColumnSet, Column } from "feishu-card";
+import { calcBestChunks } from "../utils/calcPhoto";
+import { LarkCard, CardHeader, ImgComponent, ColumnSet, Column, ActionComponent, ButtonComponent } from "feishu-card";
 
 // 发图给订阅群聊
 export const sendDailyPhoto = async (): Promise<void> => {
@@ -84,6 +84,17 @@ export const dailySendNewPhoto = async (): Promise<void> => {
             )
           )
       )
+  ).addElements(
+    new ActionComponent().addActions(
+      new ButtonComponent().setText("换一批").addValue({
+        type: "update-daily-photo-card",
+        start_time: dayjs().add(-1, "day").valueOf(),
+      }),
+      new ButtonComponent().setText("查看详情").addValue({
+        type: "fetch-photo-details",
+        images: images.map((image) => image.pixiv_addr),
+      })
+    )
   );
 
   send_card("oc_a79ce7cc8cc4afdcfd519532d0a917f5", card);
