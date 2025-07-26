@@ -20,5 +20,7 @@ declare namespace NodeJS {
     DATA_HOST_IP: string;
     CHAT_API_KEY: string;
     REDIS_HOST: string;
+    BANGUMI_ACCESS_TOKEN: string;
+    MONGO_HOST: string;
   }
 }

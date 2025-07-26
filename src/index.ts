@@ -6,6 +6,7 @@ import { startDownload } from './service/dailyDownload';
 import { consumeDownloadTaskAsync } from './service/consumeService';
 import { mongoInitPromise } from './mongo/client';
 import { dailySendNewPhoto, sendDailyPhoto } from './service/dailySendPhoto';
+import { syncAllAnimeSubjects } from './service/bangumiSyncService';
 
 // 重试配置
 const RETRY_DELAYS = [1000, 5000, 15000]; // 重试延迟时间（毫秒）
@@ -60,5 +61,20 @@ scheduleTask('29 19 * * *', 'daily sendNewPhoto', dailySendNewPhoto);
     await consumeDownloadTaskAsync();  // 启动异步任务的消费逻辑
   } catch (err) {
     console.error('Error in the consume download task:', err);
+  }
+})();
+
+// TODO: 后续应该改为定时任务，例如每天凌晨2点执行
+// scheduleTask('0 2 * * *', 'bangumi anime sync', syncAllAnimeSubjects);
+
+// 临时异步执行一次同步任务
+(async () => {
+  await mongoInitPromise;
+  try {
+    console.log('Starting bangumi anime subjects sync...');
+    await syncAllAnimeSubjects();
+    console.log('Bangumi anime subjects sync completed');
+  } catch (err) {
+    console.error('Error in bangumi sync:', err);
   }
 })();

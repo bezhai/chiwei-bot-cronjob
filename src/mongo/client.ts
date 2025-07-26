@@ -1,6 +1,6 @@
 import { MongoClient } from "mongodb";
 import { MongoCollection } from "./collection";
-import { DownloadTask, PixivImageInfo, TranslateWord } from "./types";
+import { DownloadTask, PixivImageInfo, TranslateWord, BangumiSubject } from "./types";
 
 // MongoDB 客户端实例
 let db: MongoClient;
@@ -9,10 +9,12 @@ let db: MongoClient;
 export let ImgCollection: MongoCollection<PixivImageInfo>;
 export let DownloadTaskMap: MongoCollection<DownloadTask>;
 export let TranslateWordMap: MongoCollection<TranslateWord>;
+export let BangumiSubjectCollection: MongoCollection<BangumiSubject>;
 
 export const mongoInitPromise = (async () => {
   try {
-    const url = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@mongo/chiwei?connectTimeoutMS=2000&authSource=admin`;
+
+    const url = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${process.env.MONGO_HOST || 'mongo'}/chiwei?connectTimeoutMS=2000&authSource=admin`;
 
     db = new MongoClient(url);
     await db.connect(); // 连接到 MongoDB
@@ -28,6 +30,9 @@ export const mongoInitPromise = (async () => {
     );
     TranslateWordMap = new MongoCollection<TranslateWord>(
       database.collection("trans_map")
+    );
+    BangumiSubjectCollection = new MongoCollection<BangumiSubject>(
+      database.collection("bangumi_subjects")
     );
 
     console.log("MongoDB initialization completed.");

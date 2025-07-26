@@ -132,3 +132,55 @@ export interface UploadImgV2Req {
   is_r18: boolean; // 是否为 R18 内容
   title: string; // 图片标题
 }
+
+// Bangumi Subject 相关类型
+export interface BangumiSubject {
+  _id?: string; // MongoDB 文档 ID
+  id: number; // Bangumi 条目 ID
+  type: number;
+  name: string;
+  name_cn: string;
+  summary: string;
+  date?: string;
+  platform: string;
+  images: {
+    large: string;
+    common: string;
+    medium: string;
+    small: string;
+    grid: string;
+  };
+  rating: {
+    rank: number;
+    score: number;
+    total: number;
+    count: Record<string, number>;
+  };
+  collection: {
+    wish: number;
+    collect: number;
+    doing: number;
+    on_hold: number;
+    dropped: number;
+  };
+  tags: Array<{
+    name: string;
+    count: number;
+  }>;
+  eps: number;
+  total_episodes: number;
+  volumes: number;
+  locked: boolean;
+  nsfw: boolean;
+  series: boolean;
+  meta_tags: string[];
+  infobox?: Array<{
+    key: string;
+    value: string | Array<{
+      k?: string;
+      v: string;
+    }>;
+  }>;
+  created_at: Date;
+  updated_at: Date;
+}

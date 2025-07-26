@@ -8,7 +8,7 @@ import {
   SearchUnDownloadTask,
   Success,
 } from "../mongo/service";
-import { EnumIllustType, GetIllustInfoBody } from "./types";
+import { EnumIllustType } from "./types";
 import { getIllustInfoWithCache, getIllustPageDetail } from "../pixiv/pixiv";
 import redisClient from "../redis/redisClient";
 import { MultiTag } from "../mongo/types";
