@@ -26,6 +26,7 @@ class SlidingWindowRateLimiter {
   private requests: number[] = [];
   private readonly maxRequests: number;
   private readonly windowMs: number;
+  private mutex: Promise<void> = Promise.resolve();
 
   constructor(maxRequests: number, windowMs: number) {
     this.maxRequests = maxRequests;
@@ -33,25 +34,73 @@ class SlidingWindowRateLimiter {
   }
 
   async wait(): Promise<void> {
-    const now = Date.now();
-    
-    // 清理过期的请求记录（滑动窗口）
-    this.requests = this.requests.filter(time => now - time < this.windowMs);
-    
-    if (this.requests.length >= this.maxRequests) {
-      const oldestRequest = this.requests[0];
-      const waitTime = this.windowMs - (now - oldestRequest) + 100; // 加一点缓冲
-      if (waitTime > 0) {
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-        return this.wait(); // 递归检查
+    // 使用互斥锁确保并发安全
+    this.mutex = this.mutex.then(async () => {
+      const now = Date.now();
+      
+      // 清理过期的请求记录（滑动窗口）
+      this.requests = this.requests.filter(time => now - time < this.windowMs);
+      
+      if (this.requests.length >= this.maxRequests) {
+        const oldestRequest = this.requests[0];
+        const waitTime = this.windowMs - (now - oldestRequest) + 100; // 加一点缓冲
+        if (waitTime > 0) {
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          // 重新检查（递归调用会重新获取锁）
+          return this.wait();
+        }
       }
-    }
+      
+      this.requests.push(now);
+    });
     
-    this.requests.push(now);
+    await this.mutex;
+  }
+}
+
+/**
+ * 信号量并发控制器
+ * 用于控制并发请求数量
+ */
+class Semaphore {
+  private permits: number;
+  private readonly maxPermits: number;
+  private queue: (() => void)[] = [];
+
+  constructor(maxPermits: number) {
+    this.maxPermits = maxPermits;
+    this.permits = maxPermits;
+  }
+
+  /**
+   * 获取一个许可，如果当前没有可用许可则等待
+   */
+  async acquire(): Promise<void> {
+    return new Promise(resolve => {
+      if (this.permits > 0) {
+        this.permits--;
+        resolve();
+      } else {
+        this.queue.push(resolve);
+      }
+    });
+  }
+
+  /**
+   * 释放一个许可，让等待的下一个请求获得许可
+   */
+  release(): void {
+    if (this.queue.length > 0) {
+      const resolve = this.queue.shift();
+      if (resolve) resolve();
+    } else {
+      this.permits++;
+    }
   }
 }
 
 const apiLimiter = new SlidingWindowRateLimiter(3, 60 * 1000); // 60秒内最多3次
+const concurrencyLimiter = new Semaphore(3); // 最多3个并发请求
 
 /**
  * 同步单个条目的角色信息
@@ -81,32 +130,70 @@ async function syncSubjectCharacters(subjectId: number): Promise<void> {
     // 更新subject的角色列表
     await updateSubjectCharacters(subjectId, subjectCharacters);
 
-    // 串行处理每个角色的详细信息
+    // 优雅并发处理：预检查 + 信号量控制
+    const charactersToUpdate: RelatedCharacter[] = [];
+    
+    // 先串行检查哪些角色需要更新（这个步骤无法并行，因为需要数据库查询）
     for (const character of relatedCharacters) {
       try {
-        // 检查是否需要更新角色详情
         const needsUpdate = await shouldUpdateCharacter(character.id);
-        
         if (needsUpdate) {
-          await apiLimiter.wait(); // 每次API调用前都要等待
-          
-          console.log(`Fetching details for character ${character.id} (${character.name})...`);
-          
-          // 获取角色详细信息
-          const characterDetail = await getCharacterDetail(character.id);
-          
-          // 存储角色信息
-          await upsertCharacter(characterDetail);
+          charactersToUpdate.push(character);
         } else {
           console.log(`Character ${character.id} (${character.name}) is up to date, skipping...`);
         }
       } catch (error) {
-        console.error(`Failed to sync character ${character.id}:`, error);
-        // 继续处理下一个角色
+        console.error(`Failed to check character ${character.id}:`, error);
       }
     }
 
-    console.log(`Successfully synced ${relatedCharacters.length} characters for subject ${subjectId}`);
+    if (charactersToUpdate.length === 0) {
+      console.log(`All characters for subject ${subjectId} are up to date`);
+      return;
+    }
+
+    console.log(`Need to update ${charactersToUpdate.length} characters for subject ${subjectId}`);
+
+    // 使用信号量优雅控制并发：所有请求一起开始，但最多3个同时执行
+    const promises = charactersToUpdate.map(async (character) => {
+      let acquired = false;
+      
+      try {
+        // 获取并发许可
+        await concurrencyLimiter.acquire();
+        acquired = true;
+        
+        // 确保API速率限制
+        await apiLimiter.wait();
+        
+        console.log(`Fetching details for character ${character.id} (${character.name})...`);
+        
+        // 获取角色详细信息
+        const characterDetail = await getCharacterDetail(character.id);
+        
+        // 存储角色信息
+        await upsertCharacter(characterDetail);
+        
+        return { success: true, characterId: character.id };
+      } catch (error) {
+        console.error(`Failed to sync character ${character.id}:`, error);
+        return { success: false, characterId: character.id, error };
+      } finally {
+        // 只有成功获取许可后才释放
+        if (acquired) {
+          concurrencyLimiter.release();
+        }
+      }
+    });
+
+    // 等待所有角色处理完成
+    const results = await Promise.allSettled(promises);
+    
+    // 统计最终结果
+    const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+    const failed = results.length - successful;
+    
+    console.log(`Successfully synced ${successful} characters, failed ${failed} for subject ${subjectId}`);
   } catch (error) {
     console.error(`Error syncing characters for subject ${subjectId}:`, error);
     throw error;
