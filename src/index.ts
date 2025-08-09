@@ -64,17 +64,17 @@ scheduleTask('29 19 * * *', 'daily sendNewPhoto', dailySendNewPhoto);
   }
 })();
 
-// TODO: 后续应该改为定时任务，例如每天凌晨2点执行
-// scheduleTask('0 2 * * *', 'bangumi anime sync', syncAllAnimeSubjects);
+// 定时任务：Bangumi动画数据同步 - 每周一上午10点执行
+scheduleTask('40 22 * * 6', 'bangumi anime sync', syncAllAnimeSubjects);
 
-// 临时异步执行一次同步任务
-(async () => {
-  await mongoInitPromise;
-  try {
-    console.log('Starting bangumi anime subjects sync...');
-    await syncAllAnimeSubjects();
-    console.log('Bangumi anime subjects sync completed');
-  } catch (err) {
-    console.error('Error in bangumi sync:', err);
-  }
-})();
+// 临时异步执行一次同步任务（调试用，生产环境应注释掉）
+// (async () => {
+//   await mongoInitPromise;
+//   try {
+//     console.log('Starting bangumi anime subjects sync...');
+//     await syncAllAnimeSubjects();
+//     console.log('Bangumi anime subjects sync completed');
+//   } catch (err) {
+//     console.error('Error in bangumi sync:', err);
+//   }
+// })();

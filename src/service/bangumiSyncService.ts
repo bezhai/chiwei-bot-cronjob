@@ -1,7 +1,13 @@
 import { bangumiRequest } from '../api/bangumi';
 import { BangumiSubjectCollection } from '../mongo/client';
-import { BangumiSubject } from '../mongo/types';
+import { BangumiSubject, SubjectCharacter } from '../mongo/types';
 import { send_msg } from '../lark';
+import { getSubjectCharacters, getCharacterDetail, RelatedCharacter } from './bangumiService';
+import {
+  shouldUpdateCharacter,
+  upsertCharacter,
+  updateSubjectCharacters
+} from '../mongo/service';
 
 interface SubjectQuery {
   type?: 1 | 2 | 3 | 4 | 6;
@@ -46,6 +52,66 @@ class SlidingWindowRateLimiter {
 }
 
 const apiLimiter = new SlidingWindowRateLimiter(3, 60 * 1000); // 60秒内最多3次
+
+/**
+ * 同步单个条目的角色信息
+ * @param subjectId - 条目ID
+ */
+async function syncSubjectCharacters(subjectId: number): Promise<void> {
+  await apiLimiter.wait();
+  
+  try {
+    console.log(`Syncing characters for subject ${subjectId}...`);
+    
+    // 获取条目关联的角色列表
+    const relatedCharacters: RelatedCharacter[] = await getSubjectCharacters(subjectId);
+    
+    if (!relatedCharacters || relatedCharacters.length === 0) {
+      console.log(`No characters found for subject ${subjectId}`);
+      return;
+    }
+
+    // 转换为SubjectCharacter格式
+    const subjectCharacters: SubjectCharacter[] = relatedCharacters.map(char => ({
+      id: char.id,
+      name: char.name,
+      relation: char.relation
+    }));
+
+    // 更新subject的角色列表
+    await updateSubjectCharacters(subjectId, subjectCharacters);
+
+    // 串行处理每个角色的详细信息
+    for (const character of relatedCharacters) {
+      try {
+        // 检查是否需要更新角色详情
+        const needsUpdate = await shouldUpdateCharacter(character.id);
+        
+        if (needsUpdate) {
+          await apiLimiter.wait(); // 每次API调用前都要等待
+          
+          console.log(`Fetching details for character ${character.id} (${character.name})...`);
+          
+          // 获取角色详细信息
+          const characterDetail = await getCharacterDetail(character.id);
+          
+          // 存储角色信息
+          await upsertCharacter(characterDetail);
+        } else {
+          console.log(`Character ${character.id} (${character.name}) is up to date, skipping...`);
+        }
+      } catch (error) {
+        console.error(`Failed to sync character ${character.id}:`, error);
+        // 继续处理下一个角色
+      }
+    }
+
+    console.log(`Successfully synced ${relatedCharacters.length} characters for subject ${subjectId}`);
+  } catch (error) {
+    console.error(`Error syncing characters for subject ${subjectId}:`, error);
+    throw error;
+  }
+}
 
 /**
  * 获取指定类型的subject并写入数据库
@@ -93,6 +159,7 @@ async function fetchAndStoreSubjects(
       series: item.series,
       meta_tags: item.meta_tags,
       infobox: item.infobox,
+      characters: [], // 初始化为空数组，后续会更新
       created_at: new Date(),
       updated_at: new Date()
     }));
@@ -104,6 +171,16 @@ async function fetchAndStoreSubjects(
         subject,
         { upsert: true }
       );
+    }
+
+    // 同步每个subject的角色信息
+    for (const subject of subjects) {
+      try {
+        await syncSubjectCharacters(subject.id);
+      } catch (error) {
+        console.error(`Failed to sync characters for subject ${subject.id}:`, error);
+        // 继续处理下一个subject，不中断整个流程
+      }
     }
 
     return subjects.length;
@@ -179,6 +256,7 @@ export async function syncAllAnimeSubjects(): Promise<void> {
         await new Promise(resolve => setTimeout(resolve, 5000));
       }
     }
+    
 
     if (consecutiveFailures < maxFailures) {
       console.log('All anime subjects synced successfully');

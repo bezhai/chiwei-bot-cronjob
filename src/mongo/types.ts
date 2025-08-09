@@ -133,6 +133,47 @@ export interface UploadImgV2Req {
   title: string; // 图片标题
 }
 
+// Bangumi Character 相关类型
+export interface BangumiCharacter {
+  _id?: string; // MongoDB 文档 ID
+  id: number; // Bangumi 角色 ID
+  name: string;
+  type: number; // 1=角色, 2=机体, 3=舰船, 4=组织
+  summary: string;
+  images?: {
+    large: string;
+    medium: string;
+    small: string;
+    grid: string;
+  };
+  locked: boolean;
+  infobox?: Array<{
+    key: string;
+    value: string | Array<{
+      k?: string;
+      v: string;
+    }>;
+  }>;
+  gender?: string;
+  blood_type?: number; // 1=A, 2=B, 3=AB, 4=O
+  birth_year?: number;
+  birth_mon?: number;
+  birth_day?: number;
+  stat: {
+    comments: number;
+    collects: number;
+  };
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Subject关联的角色信息（简化版）
+export interface SubjectCharacter {
+  id: number;
+  name: string;
+  relation?: string; // 角色关系描述
+}
+
 // Bangumi Subject 相关类型
 export interface BangumiSubject {
   _id?: string; // MongoDB 文档 ID
@@ -181,6 +222,7 @@ export interface BangumiSubject {
       v: string;
     }>;
   }>;
+  characters: SubjectCharacter[]; // 新增：关联的角色列表
   created_at: Date;
   updated_at: Date;
 }

@@ -1,6 +1,6 @@
 import { MongoClient } from "mongodb";
 import { MongoCollection } from "./collection";
-import { DownloadTask, PixivImageInfo, TranslateWord, BangumiSubject } from "./types";
+import { DownloadTask, PixivImageInfo, TranslateWord, BangumiSubject, BangumiCharacter } from "./types";
 
 // MongoDB 客户端实例
 let db: MongoClient;
@@ -10,6 +10,7 @@ export let ImgCollection: MongoCollection<PixivImageInfo>;
 export let DownloadTaskMap: MongoCollection<DownloadTask>;
 export let TranslateWordMap: MongoCollection<TranslateWord>;
 export let BangumiSubjectCollection: MongoCollection<BangumiSubject>;
+export let BangumiCharacterCollection: MongoCollection<BangumiCharacter>;
 
 export const mongoInitPromise = (async () => {
   try {
@@ -33,6 +34,9 @@ export const mongoInitPromise = (async () => {
     );
     BangumiSubjectCollection = new MongoCollection<BangumiSubject>(
       database.collection("bangumi_subjects")
+    );
+    BangumiCharacterCollection = new MongoCollection<BangumiCharacter>(
+      database.collection("bangumi_characters")
     );
 
     console.log("MongoDB initialization completed.");

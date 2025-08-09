@@ -23,7 +23,7 @@ export class MongoCollection<T extends Document> {
   async findOne(
     filter: Filter<T>,
     options?: FindOptions<T>
-  ): Promise<T | null> {
+  ): Promise<WithId<T> | null> {
     return this.collection.findOne(filter, options);
   }
 

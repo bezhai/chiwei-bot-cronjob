@@ -109,3 +109,83 @@ export async function getSubjectsByType(
 ): Promise<SubjectsResponse> {
   return getSubjects({ type, limit, offset });
 }
+
+// 角色相关接口类型定义
+export interface RelatedCharacter {
+  id: number;
+  name: string;
+  type: number; // 1=角色, 2=机体, 3=舰船, 4=组织
+  relation: string;
+  images?: {
+    large: string;
+    medium: string;
+    small: string;
+    grid: string;
+  };
+  actors: Array<{
+    id: number;
+    name: string;
+    type: number;
+    career: string[];
+    images?: {
+      large: string;
+      medium: string;
+      small: string;
+      grid: string;
+    };
+  }>;
+}
+
+export interface CharacterDetail {
+  id: number;
+  name: string;
+  type: number;
+  images?: {
+    large: string;
+    medium: string;
+    small: string;
+    grid: string;
+  };
+  summary: string;
+  locked: boolean;
+  infobox?: Array<{
+    key: string;
+    value: string | Array<{
+      k?: string;
+      v: string;
+    }>;
+  }>;
+  gender?: string;
+  blood_type?: number; // 1=A, 2=B, 3=AB, 4=O
+  birth_year?: number;
+  birth_mon?: number;
+  birth_day?: number;
+  stat: {
+    comments: number;
+    collects: number;
+  };
+}
+
+/**
+ * 获取条目关联的角色列表
+ * @param subjectId - 条目ID
+ * @returns 角色列表
+ */
+export async function getSubjectCharacters(subjectId: number): Promise<RelatedCharacter[]> {
+  return bangumiRequest({
+    path: `/v0/subjects/${subjectId}/characters`,
+    method: 'GET'
+  });
+}
+
+/**
+ * 获取角色详细信息
+ * @param characterId - 角色ID
+ * @returns 角色详细信息
+ */
+export async function getCharacterDetail(characterId: number): Promise<CharacterDetail> {
+  return bangumiRequest({
+    path: `/v0/characters/${characterId}`,
+    method: 'GET'
+  });
+}

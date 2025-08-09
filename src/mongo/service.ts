@@ -14,8 +14,10 @@ import {
   PixivImageInfo,
   TranslateWord,
   UploadImgV2Req,
+  BangumiCharacter,
+  SubjectCharacter,
 } from "./types";
-import { DownloadTaskMap, ImgCollection, TranslateWordMap } from "./client";
+import { DownloadTaskMap, ImgCollection, TranslateWordMap, BangumiCharacterCollection, BangumiSubjectCollection } from "./client";
 
 /**
  * 获取给定 illustIds 中最大值的 illust_id
@@ -327,5 +329,119 @@ export async function addImage(
   } catch (err) {
     console.error("Error in addImage:", err);
     throw err;
+  }
+}
+
+/**
+ * 检查角色是否需要更新（不存在或超过14天未更新）
+ * @param characterId - 角色ID
+ * @returns 是否需要更新
+ */
+export async function shouldUpdateCharacter(characterId: number): Promise<boolean> {
+  try {
+    const character = await BangumiCharacterCollection.findOne({ id: characterId });
+    
+    if (!character) {
+      return true; // 角色不存在，需要获取
+    }
+    
+    // 检查是否超过14天未更新
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    
+    return character.updated_at < fourteenDaysAgo;
+  } catch (error) {
+    console.error(`Error checking character update status for ${characterId}:`, error);
+    return true; // 出错时默认需要更新
+  }
+}
+
+/**
+ * 存储或更新角色信息
+ * @param characterData - 角色详细信息
+ */
+export async function upsertCharacter(characterData: any): Promise<void> {
+  try {
+    const character: BangumiCharacter = {
+      id: characterData.id,
+      name: characterData.name,
+      type: characterData.type,
+      summary: characterData.summary || '',
+      images: characterData.images,
+      locked: characterData.locked || false,
+      infobox: characterData.infobox,
+      gender: characterData.gender,
+      blood_type: characterData.blood_type,
+      birth_year: characterData.birth_year,
+      birth_mon: characterData.birth_mon,
+      birth_day: characterData.birth_day,
+      stat: characterData.stat || { comments: 0, collects: 0 },
+      created_at: new Date(),
+      updated_at: new Date()
+    };
+
+    await BangumiCharacterCollection.updateOne(
+      { id: character.id },
+      character,
+      { upsert: true }
+    );
+
+    console.log(`Character ${character.id} (${character.name}) updated successfully`);
+  } catch (error) {
+    console.error(`Error upserting character ${characterData.id}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 更新Subject的角色列表
+ * @param subjectId - 条目ID
+ * @param characters - 角色列表
+ */
+export async function updateSubjectCharacters(
+  subjectId: number,
+  characters: SubjectCharacter[]
+): Promise<void> {
+  try {
+    await BangumiSubjectCollection.updateOne(
+      { id: subjectId },
+      {
+        characters: characters,
+        updated_at: new Date()
+      }
+    );
+
+    console.log(`Updated characters for subject ${subjectId}, ${characters.length} characters`);
+  } catch (error) {
+    console.error(`Error updating characters for subject ${subjectId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 获取角色信息（从本地数据库）
+ * @param characterId - 角色ID
+ * @returns 角色信息或null
+ */
+export async function getCharacterById(characterId: number): Promise<BangumiCharacter | null> {
+  try {
+    return await BangumiCharacterCollection.findOne({ id: characterId });
+  } catch (error) {
+    console.error(`Error getting character ${characterId}:`, error);
+    return null;
+  }
+}
+
+/**
+ * 批量获取角色信息
+ * @param characterIds - 角色ID列表
+ * @returns 角色信息列表
+ */
+export async function getCharactersByIds(characterIds: number[]): Promise<BangumiCharacter[]> {
+  try {
+    return await BangumiCharacterCollection.find({ id: { $in: characterIds } });
+  } catch (error) {
+    console.error(`Error getting characters by ids:`, error);
+    return [];
   }
 }
