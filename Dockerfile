@@ -1,4 +1,4 @@
-FROM node:18.20.5
+FROM node:22.12.0
 
 ENV TZ=Asia/Shanghai
 
