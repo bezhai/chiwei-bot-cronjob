@@ -13,9 +13,10 @@ import {
   MultiTag,
   PixivImageInfo,
   TranslateWord,
-  UploadImgV2Req,
-  BangumiCharacter,
-  SubjectCharacter,
+    UploadImgV2Req,
+    BangumiCharacter,
+    SubjectCharacter,
+    BangumiSubject,
 } from "./types";
 import { DownloadTaskMap, ImgCollection, TranslateWordMap, BangumiCharacterCollection, BangumiSubjectCollection } from "./client";
 
@@ -414,6 +415,31 @@ export async function updateSubjectCharacters(
     console.log(`Updated characters for subject ${subjectId}, ${characters.length} characters`);
   } catch (error) {
     console.error(`Error updating characters for subject ${subjectId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 仅更新条目的元数据（不包含 characters），避免覆盖已有角色列表
+ * @param subject - 不包含 characters 字段的条目数据
+ */
+export async function updateSubjectMetadata(
+  subject: Omit<BangumiSubject, "characters">
+): Promise<void> {
+  try {
+    await BangumiSubjectCollection.updateOne(
+      { id: subject.id },
+      {
+        // 仅设置元数据字段，不包含 characters
+        ...(subject as Partial<BangumiSubject>),
+        updated_at: new Date(),
+      },
+      { upsert: true }
+    );
+
+    console.log(`Updated subject metadata for ${subject.id} (${subject.name})`);
+  } catch (error) {
+    console.error(`Error updating subject metadata for ${subject.id}:`, error);
     throw error;
   }
 }

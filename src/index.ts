@@ -6,7 +6,7 @@ import { startDownload } from './service/dailyDownload';
 import { consumeDownloadTaskAsync } from './service/consumeService';
 import { mongoInitPromise } from './mongo/client';
 import { dailySendNewPhoto, sendDailyPhoto } from './service/dailySendPhoto';
-import { syncAllAnimeSubjects } from './service/bangumiSyncService';
+import { syncAllAnimeSubjects, checkAndResumeUnfinishedSync } from './service/bangumiSyncService';
 
 // 重试配置
 const RETRY_DELAYS = [1000, 5000, 15000]; // 重试延迟时间（毫秒）
@@ -57,6 +57,14 @@ scheduleTask('29 19 * * *', 'daily sendNewPhoto', dailySendNewPhoto);
 // 异步消费任务
 (async () => {
   await mongoInitPromise;  // 等待 MongoDB 初始化完成
+  
+  // 检查并恢复未完成的Bangumi同步任务
+  try {
+    await checkAndResumeUnfinishedSync();
+  } catch (err) {
+    console.error('Error checking unfinished bangumi sync:', err);
+  }
+  
   try {
     await consumeDownloadTaskAsync();  // 启动异步任务的消费逻辑
   } catch (err) {

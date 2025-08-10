@@ -1,13 +1,14 @@
 import { bangumiRequest } from '../api/bangumi';
-import { BangumiSubjectCollection } from '../mongo/client';
 import { BangumiSubject, SubjectCharacter } from '../mongo/types';
 import { send_msg } from '../lark';
 import { getSubjectCharacters, getCharacterDetail, RelatedCharacter } from './bangumiService';
 import {
   shouldUpdateCharacter,
   upsertCharacter,
-  updateSubjectCharacters
+  updateSubjectCharacters,
+  updateSubjectMetadata,
 } from '../mongo/service';
+import redisClient from '../redis/redisClient';
 
 interface SubjectQuery {
   type?: 1 | 2 | 3 | 4 | 6;
@@ -22,93 +23,86 @@ interface BangumiApiResponse {
   offset: number;
 }
 
-class SlidingWindowRateLimiter {
-  private requests: number[] = [];
-  private readonly maxRequests: number;
-  private readonly windowMs: number;
-  private mutex: Promise<void> = Promise.resolve();
-
-  constructor(maxRequests: number, windowMs: number) {
-    this.maxRequests = maxRequests;
-    this.windowMs = windowMs;
+// 仅针对 getCharacterDetail 的 1 QPS 限速
+let lastCharacterDetailAt: number | null = null;
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+async function throttleCharacterDetail(): Promise<void> {
+  const now = Date.now();
+  if (lastCharacterDetailAt === null) {
+    lastCharacterDetailAt = now;
+    return;
   }
+  const elapsed = now - lastCharacterDetailAt;
+  if (elapsed < 1000) {
+    await sleep(1000 - elapsed);
+  }
+  lastCharacterDetailAt = Date.now();
+}
 
-  async wait(): Promise<void> {
-    // 使用互斥锁确保并发安全
-    this.mutex = this.mutex.then(async () => {
-      const now = Date.now();
-      
-      // 清理过期的请求记录（滑动窗口）
-      this.requests = this.requests.filter(time => now - time < this.windowMs);
-      
-      if (this.requests.length >= this.maxRequests) {
-        const oldestRequest = this.requests[0];
-        const waitTime = this.windowMs - (now - oldestRequest) + 100; // 加一点缓冲
-        if (waitTime > 0) {
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-          // 重新检查（递归调用会重新获取锁）
-          return this.wait();
-        }
-      }
-      
-      this.requests.push(now);
-    });
-    
-    await this.mutex;
+// Redis 进度键与 TTL（14 天）
+const REDIS_OFFSET_KEY = 'bangumi:sync:anime:offset';
+const REDIS_OFFSET_TTL_SECONDS = 14 * 24 * 60 * 60; // 14 天
+
+export async function getSavedOffset(): Promise<number> {
+  try {
+    const v = await redisClient.get(REDIS_OFFSET_KEY);
+    const parsed = v ? parseInt(v, 10) : 0;
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  } catch (e) {
+    console.error('Failed to read offset from Redis, fallback to 0:', e);
+    return 0;
+  }
+}
+
+async function saveOffset(nextOffset: number): Promise<void> {
+  try {
+    await redisClient.set(REDIS_OFFSET_KEY, String(nextOffset), 'EX', REDIS_OFFSET_TTL_SECONDS);
+    // 可选：记录日志
+    console.log(`Saved offset to Redis: ${nextOffset}`);
+  } catch (e) {
+    console.error('Failed to save offset to Redis:', e);
   }
 }
 
 /**
- * 信号量并发控制器
- * 用于控制并发请求数量
+ * 清理Redis中的同步进度（同步完成后调用）
  */
-class Semaphore {
-  private permits: number;
-  private readonly maxPermits: number;
-  private queue: (() => void)[] = [];
-
-  constructor(maxPermits: number) {
-    this.maxPermits = maxPermits;
-    this.permits = maxPermits;
-  }
-
-  /**
-   * 获取一个许可，如果当前没有可用许可则等待
-   */
-  async acquire(): Promise<void> {
-    return new Promise(resolve => {
-      if (this.permits > 0) {
-        this.permits--;
-        resolve();
-      } else {
-        this.queue.push(resolve);
-      }
-    });
-  }
-
-  /**
-   * 释放一个许可，让等待的下一个请求获得许可
-   */
-  release(): void {
-    if (this.queue.length > 0) {
-      const resolve = this.queue.shift();
-      if (resolve) resolve();
-    } else {
-      this.permits++;
-    }
+async function clearSavedOffset(): Promise<void> {
+  try {
+    await redisClient.del(REDIS_OFFSET_KEY);
+    console.log('Cleared bangumi sync offset from Redis');
+  } catch (e) {
+    console.error('Failed to clear offset from Redis:', e);
   }
 }
 
-const apiLimiter = new SlidingWindowRateLimiter(3, 60 * 1000); // 60秒内最多3次
-const concurrencyLimiter = new Semaphore(3); // 最多3个并发请求
+/**
+ * 检查并恢复未完成的Bangumi同步任务
+ * 如果Redis中存在未完成的同步进度，则立即开始同步
+ */
+export async function checkAndResumeUnfinishedSync(): Promise<void> {
+  try {
+    const savedOffset = await getSavedOffset();
+    if (savedOffset > 0) {
+      console.log(`Found unfinished bangumi sync at offset ${savedOffset}, resuming...`);
+      await syncAllAnimeSubjects();
+      console.log('Successfully resumed and completed bangumi sync');
+    } else {
+      console.log('No unfinished bangumi sync found');
+    }
+  } catch (error) {
+    console.error('Error in resume bangumi sync:', error);
+    throw error;
+  }
+}
 
 /**
  * 同步单个条目的角色信息
  * @param subjectId - 条目ID
  */
 async function syncSubjectCharacters(subjectId: number): Promise<void> {
-  await apiLimiter.wait();
-  
   try {
     console.log(`Syncing characters for subject ${subjectId}...`);
     
@@ -154,45 +148,22 @@ async function syncSubjectCharacters(subjectId: number): Promise<void> {
 
     console.log(`Need to update ${charactersToUpdate.length} characters for subject ${subjectId}`);
 
-    // 使用信号量优雅控制并发：所有请求一起开始，但最多3个同时执行
-    const promises = charactersToUpdate.map(async (character) => {
-      let acquired = false;
-      
+    // 角色详情顺序处理 + 1 QPS 限速
+    let successful = 0;
+    let failed = 0;
+    for (const character of charactersToUpdate) {
       try {
-        // 获取并发许可
-        await concurrencyLimiter.acquire();
-        acquired = true;
-        
-        // 确保API速率限制
-        await apiLimiter.wait();
-        
+        await throttleCharacterDetail();
         console.log(`Fetching details for character ${character.id} (${character.name})...`);
-        
-        // 获取角色详细信息
         const characterDetail = await getCharacterDetail(character.id);
-        
-        // 存储角色信息
         await upsertCharacter(characterDetail);
-        
-        return { success: true, characterId: character.id };
+        successful++;
       } catch (error) {
         console.error(`Failed to sync character ${character.id}:`, error);
-        return { success: false, characterId: character.id, error };
-      } finally {
-        // 只有成功获取许可后才释放
-        if (acquired) {
-          concurrencyLimiter.release();
-        }
+        failed++;
       }
-    });
+    }
 
-    // 等待所有角色处理完成
-    const results = await Promise.allSettled(promises);
-    
-    // 统计最终结果
-    const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
-    const failed = results.length - successful;
-    
     console.log(`Successfully synced ${successful} characters, failed ${failed} for subject ${subjectId}`);
   } catch (error) {
     console.error(`Error syncing characters for subject ${subjectId}:`, error);
@@ -212,8 +183,6 @@ async function fetchAndStoreSubjects(
   limit: number,
   offset: number
 ): Promise<number> {
-  await apiLimiter.wait();
-  
   try {
     const response = await bangumiRequest({
       path: '/v0/subjects',
@@ -225,8 +194,8 @@ async function fetchAndStoreSubjects(
       return 0;
     }
 
-    // 转换数据格式并写入数据库
-    const subjects: BangumiSubject[] = response.data.map(item => ({
+    // 转换数据格式并写入元数据（不覆盖 characters）
+    const subjectsMeta: Omit<BangumiSubject, 'characters'>[] = response.data.map(item => ({
       id: item.id,
       type: item.type,
       name: item.name,
@@ -246,22 +215,20 @@ async function fetchAndStoreSubjects(
       series: item.series,
       meta_tags: item.meta_tags,
       infobox: item.infobox,
-      characters: [], // 初始化为空数组，后续会更新
       created_at: new Date(),
       updated_at: new Date()
     }));
 
-    // 批量插入，如果已存在则更新
-    for (const subject of subjects) {
-      await BangumiSubjectCollection.updateOne(
-        { id: subject.id },
-        subject,
-        { upsert: true }
-      );
+    for (const subject of subjectsMeta) {
+      try {
+        await updateSubjectMetadata(subject);
+      } catch (e) {
+        console.error(`Failed to update subject metadata for ${subject.id}:`, e);
+      }
     }
 
-    // 同步每个subject的角色信息
-    for (const subject of subjects) {
+    // 同步每个subject的角色信息（获取列表成功才写入，不覆盖失败）
+    for (const subject of subjectsMeta) {
       try {
         await syncSubjectCharacters(subject.id);
       } catch (error) {
@@ -270,7 +237,7 @@ async function fetchAndStoreSubjects(
       }
     }
 
-    return subjects.length;
+    return subjectsMeta.length;
   } catch (error) {
     console.error(`Error fetching subjects (type=${type}, offset=${offset}):`, error);
     throw error;
@@ -291,7 +258,10 @@ export async function syncAllAnimeSubjects(): Promise<void> {
   const maxFailures = 3;
 
   try {
-    // 第一次请求获取total值
+    // 从 Redis 读取进度（断点续传）
+    offset = await getSavedOffset();
+
+    // 第一次请求获取 total 值及当页数据
     const firstResponse = await bangumiRequest({
       path: '/v0/subjects',
       method: 'GET',
@@ -301,10 +271,53 @@ export async function syncAllAnimeSubjects(): Promise<void> {
     total = firstResponse.total;
     console.log(`Total anime subjects to sync: ${total}`);
 
-    // 处理第一页数据
+    // 处理第一页数据（避免重复抓取首页）
     if (firstResponse.data && firstResponse.data.length > 0) {
-      await fetchAndStoreSubjects(type, limit, offset);
+      // 复用现有逻辑：构造临时响应对象交给处理函数
+      const temp: BangumiApiResponse = firstResponse;
+      // 人为构造：通过本地处理流程（不再次请求）
+      const subjectsMeta: Omit<BangumiSubject, 'characters'>[] = temp.data.map((item: any) => ({
+        id: item.id,
+        type: item.type,
+        name: item.name,
+        name_cn: item.name_cn,
+        summary: item.summary,
+        date: item.date,
+        platform: item.platform,
+        images: item.images,
+        rating: item.rating,
+        collection: item.collection,
+        tags: item.tags,
+        eps: item.eps,
+        total_episodes: item.total_episodes,
+        volumes: item.volumes,
+        locked: item.locked,
+        nsfw: item.nsfw,
+        series: item.series,
+        meta_tags: item.meta_tags,
+        infobox: item.infobox,
+        created_at: new Date(),
+        updated_at: new Date()
+      }));
+
+      for (const subject of subjectsMeta) {
+        try {
+          await updateSubjectMetadata(subject);
+        } catch (e) {
+          console.error(`Failed to update subject metadata for ${subject.id}:`, e);
+        }
+      }
+
+      for (const subject of subjectsMeta) {
+        try {
+          await syncSubjectCharacters(subject.id);
+        } catch (error) {
+          console.error(`Failed to sync characters for subject ${subject.id}:`, error);
+        }
+      }
+
       offset += limit;
+      await saveOffset(offset);
       consecutiveFailures = 0; // 重置失败计数
     }
 
@@ -319,6 +332,7 @@ export async function syncAllAnimeSubjects(): Promise<void> {
         
         console.log(`Synced ${offset + fetched}/${total} anime subjects`);
         offset += limit;
+        await saveOffset(offset);
         consecutiveFailures = 0; // 重置失败计数
       } catch (error) {
         consecutiveFailures++;
@@ -347,6 +361,8 @@ export async function syncAllAnimeSubjects(): Promise<void> {
 
     if (consecutiveFailures < maxFailures) {
       console.log('All anime subjects synced successfully');
+      // 同步完成后清理Redis中的进度记录
+      await clearSavedOffset();
     }
   } catch (error) {
     console.error('Error syncing anime subjects:', error);
