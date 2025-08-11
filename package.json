@@ -1,40 +1,38 @@
 {
-  "name": "chiwei-bot-cronjob",
+  "name": "bgm-tv-search",
   "version": "1.0.0",
-  "description": "一些定时任务",
-  "main": "index.ts",
+  "description": "",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc"
+    "start": "ts-node src/index.ts",
+    "build": "tsc",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "rotation:status": "ts-node src/scripts/manageMonthlyRotation.ts status",
+    "rotation:run": "ts-node src/scripts/manageMonthlyRotation.ts run",
+    "rotation:reset": "ts-node src/scripts/manageMonthlyRotation.ts reset",
+    "bangumi": "ts-node src/scripts/bangumiManager.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "engines": {
-    "node": ">=22.0.0"
-  },
   "devDependencies": {
-    "@types/dotenv": "^6.1.1",
-    "@types/lodash": "^4.17.13",
-    "@types/node": "^22.10.1",
+    "@types/node": "^22.5.0",
     "@types/node-cron": "^3.0.11",
-    "@types/redis": "^4.0.10",
-    "cd": "^0.3.3",
     "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.6.3"
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.5.4"
   },
   "dependencies": {
-    "@larksuiteoapi/node-sdk": "^1.38.0",
-    "axios": "^1.7.7",
-    "dayjs": "^1.11.13",
+    "@aws-sdk/client-s3": "^3.645.0",
+    "@google-cloud/translate": "^8.5.0",
+    "axios": "^1.7.5",
+    "canvas": "^2.11.2",
     "dotenv": "^16.4.5",
-    "feishu-card": "^0.0.18",
-    "ioredis": "^5.4.1",
-    "lodash": "^4.17.21",
-    "mongodb": "^6.10.0",
+    "lark-js-sdk": "^1.0.8",
+    "mongodb": "^6.8.0",
     "node-cron": "^3.0.3",
-    "redis": "^4.7.0"
+    "redis": "^4.7.0",
+    "sharp": "^0.33.5"
   }
 }
