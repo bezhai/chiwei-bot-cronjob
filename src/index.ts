@@ -6,7 +6,12 @@ import { startDownload } from './service/dailyDownload';
 import { consumeDownloadTaskAsync } from './service/consumeService';
 import { mongoInitPromise } from './mongo/client';
 import { dailySendNewPhoto, sendDailyPhoto } from './service/dailySendPhoto';
-import { syncAllAnimeSubjects, checkAndResumeUnfinishedSync } from './service/bangumiSyncService';
+import {
+  dailyIncrementalUpdate,
+  yearlyUpdate,
+  biweeklyUpdate,
+} from './service/bangumiGradualSyncService';
+import { monthlyRotationUpdate } from './service/bangumiMonthlyRotationService';
 
 // 重试配置
 const RETRY_DELAYS = [1000, 5000, 15000]; // 重试延迟时间（毫秒）
@@ -58,12 +63,6 @@ scheduleTask('29 19 * * *', 'daily sendNewPhoto', dailySendNewPhoto);
 (async () => {
   await mongoInitPromise;  // 等待 MongoDB 初始化完成
   
-  // 检查并恢复未完成的Bangumi同步任务
-  try {
-    await checkAndResumeUnfinishedSync();
-  } catch (err) {
-    console.error('Error checking unfinished bangumi sync:', err);
-  }
   
   try {
     await consumeDownloadTaskAsync();  // 启动异步任务的消费逻辑
@@ -72,17 +71,14 @@ scheduleTask('29 19 * * *', 'daily sendNewPhoto', dailySendNewPhoto);
   }
 })();
 
-// 定时任务：Bangumi动画数据同步 - 每周一上午10点执行
-scheduleTask('40 22 * * 6', 'bangumi anime sync', syncAllAnimeSubjects);
+// 新的分级更新策略
+// 每日6点：增量更新 + 当年和下一年更新
+scheduleTask('0 6 * * *', 'daily incremental update', dailyIncrementalUpdate);
+scheduleTask('0 7 * * *', 'yearly update', yearlyUpdate);
 
-// 临时异步执行一次同步任务（调试用，生产环境应注释掉）
-// (async () => {
-//   await mongoInitPromise;
-//   try {
-//     console.log('Starting bangumi anime subjects sync...');
-//     await syncAllAnimeSubjects();
-//     console.log('Bangumi anime subjects sync completed');
-//   } catch (err) {
-//     console.error('Error in bangumi sync:', err);
-//   }
-// })();
+// 每7天更新：前两年条目更新（每周日9点执行）
+scheduleTask('0 9 * * 0', 'biweekly update', biweeklyUpdate);
+
+// 每周一下午2点：月份轮询更新（替代原来的月度全量刷新）
+scheduleTask('0 14 * * 1', 'monthly rotation update', monthlyRotationUpdate);
+

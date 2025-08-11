@@ -445,29 +445,38 @@ export async function updateSubjectMetadata(
 }
 
 /**
- * 获取角色信息（从本地数据库）
- * @param characterId - 角色ID
- * @returns 角色信息或null
+ * 获取数据库中type=2的条目数量
  */
-export async function getCharacterById(characterId: number): Promise<BangumiCharacter | null> {
+export async function getLocalBangumiSubjectCount(): Promise<number> {
   try {
-    return await BangumiCharacterCollection.findOne({ id: characterId });
+    return await BangumiSubjectCollection.countDocuments({ type: 2 });
   } catch (error) {
-    console.error(`Error getting character ${characterId}:`, error);
-    return null;
+    console.error('Error getting local subject count:', error);
+    return 0;
   }
 }
 
 /**
- * 批量获取角色信息
- * @param characterIds - 角色ID列表
- * @returns 角色信息列表
+ * 检查角色是否需要更新（支持自定义冷却周期）
+ * @param characterId - 角色ID
+ * @param cooldownDays - 冷却天数
+ * @returns 是否需要更新
  */
-export async function getCharactersByIds(characterIds: number[]): Promise<BangumiCharacter[]> {
+export async function shouldUpdateCharacterWithCooldown(characterId: number, cooldownDays: number): Promise<boolean> {
   try {
-    return await BangumiCharacterCollection.find({ id: { $in: characterIds } });
+    const character = await BangumiCharacterCollection.findOne({ id: characterId });
+    
+    if (!character) {
+      return true; // 角色不存在，需要获取
+    }
+    
+    // 检查是否超过冷却周期未更新
+    const cooldownDate = new Date();
+    cooldownDate.setDate(cooldownDate.getDate() - cooldownDays);
+    
+    return character.updated_at < cooldownDate;
   } catch (error) {
-    console.error(`Error getting characters by ids:`, error);
-    return [];
+    console.error(`Error checking character update status for ${characterId}:`, error);
+    return true; // 出错时默认需要更新
   }
 }
