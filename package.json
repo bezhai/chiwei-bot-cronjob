@@ -27,6 +27,8 @@
   },
   "dependencies": {
     "@larksuiteoapi/node-sdk": "^1.38.0",
+    "@types/adm-zip": "^0.5.7",
+    "adm-zip": "^0.5.16",
     "axios": "^1.7.7",
     "dayjs": "^1.11.13",
     "dotenv": "^16.4.5",

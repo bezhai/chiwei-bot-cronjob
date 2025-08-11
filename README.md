@@ -74,14 +74,16 @@ make clean    # 清理容器和镜像
 | 每天 10:00 | Pixiv 图片下载 | 下载关注插画师的最新作品 |
 | 每天 18:00 | 每日图片推送 | 向飞书群聊发送精选图片 |
 | 每天 19:29 | 新图推送 | 发送当天新发现的优质图片 |
+| 每周三 07:00 | Bangumi Archive 同步 | 从 GitHub 下载最新的 Bangumi 数据并导入数据库 |
 
 ## 数据结构
 
 ### MongoDB 集合
 
-- `bangumi_subjects`: Bangumi 动漫条目信息
-- `download_tasks`: 待下载的图片任务队列
-- `photos`: 已下载的图片元数据
+- `img_map`: 已下载的图片元数据
+- `download_task`: 待下载的图片任务队列
+- `trans_map`: 标签翻译映射
+- `bangumi_archive_*`: Bangumi Archive 数据集合（subjects、characters、persons、episodes 等）
 
 ### Redis 键值
 

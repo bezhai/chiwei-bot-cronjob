@@ -6,6 +6,7 @@ import { startDownload } from './service/dailyDownload';
 import { consumeDownloadTaskAsync } from './service/consumeService';
 import { mongoInitPromise } from './mongo/client';
 import { dailySendNewPhoto, sendDailyPhoto } from './service/dailySendPhoto';
+import { syncBangumiArchive } from './service/bangumiArchiveService';
 
 // 重试配置
 const RETRY_DELAYS = [1000, 5000, 15000]; // 重试延迟时间（毫秒）
@@ -52,6 +53,9 @@ scheduleTask('0 18 * * *', 'daily sendPhoto', sendDailyPhoto);
 
 // 定时任务：发送每日新照片
 scheduleTask('29 19 * * *', 'daily sendNewPhoto', dailySendNewPhoto);
+
+// 定时任务：Bangumi Archive 数据同步 (每周三上午7点)
+scheduleTask('0 7 * * 3', 'bangumi archive sync', syncBangumiArchive);
 
 // 异步消费任务
 (async () => {
