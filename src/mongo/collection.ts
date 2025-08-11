@@ -11,6 +11,7 @@ import {
   WithId,
   OptionalUnlessRequiredId,
   MatchKeysAndValues,
+  UpdateFilter,
 } from "mongodb";
 
 export class MongoCollection<T extends Document> {
@@ -55,6 +56,14 @@ export class MongoCollection<T extends Document> {
     options?: UpdateOptions
   ): Promise<void> {
     await this.collection.updateOne(filter, { $set: update }, options);
+  }
+
+  async updateOneOrigin(
+    filter: Filter<T>,
+    update: Document[] | UpdateFilter<T>,
+    options?: UpdateOptions
+  ): Promise<void> {
+    await this.collection.updateOne(filter, update, options);
   }
 
   async updateMany(
