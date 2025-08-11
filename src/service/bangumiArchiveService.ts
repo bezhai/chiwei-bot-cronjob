@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import AdmZip from 'adm-zip';
+import * as unzipper from 'unzipper';
 import { createReadStream } from 'fs';
 import { createInterface } from 'readline';
 import { 
@@ -130,19 +131,49 @@ export class BangumiArchiveService {
   }
 
   /**
-   * 解压 ZIP 文件
+   * 解压 ZIP 文件 - 使用流式解压避免内存溢出
    */
   private async extractZipFile(zipFilePath: string, tempDir: string): Promise<string> {
+    const extractDir = path.join(tempDir, 'extracted');
+    
     try {
-      const zip = new AdmZip(zipFilePath);
-      const extractDir = path.join(tempDir, 'extracted');
-      
       // 确保解压目录存在
       if (!fs.existsSync(extractDir)) {
         fs.mkdirSync(extractDir, { recursive: true });
       }
 
-      zip.extractAllTo(extractDir, true);
+      console.log('开始流式解压ZIP文件...');
+      
+      // 使用Promise包装流式解压过程
+      await new Promise<void>((resolve, reject) => {
+        const stream = fs.createReadStream(zipFilePath)
+          .pipe(unzipper.Extract({ path: extractDir }));
+
+        stream.on('close', () => {
+          console.log('ZIP文件解压完成');
+          resolve();
+        });
+
+        stream.on('error', (error: Error) => {
+          console.error('解压过程中发生错误:', error);
+          reject(error);
+        });
+
+        // 添加超时处理（30分钟）
+        const timeout = setTimeout(() => {
+          stream.destroy();
+          reject(new Error('解压超时（30分钟）'));
+        }, 30 * 60 * 1000);
+
+        stream.on('close', () => {
+          clearTimeout(timeout);
+        });
+
+        stream.on('error', () => {
+          clearTimeout(timeout);
+        });
+      });
+
       return extractDir;
     } catch (error) {
       throw new Error(`解压 ZIP 文件失败: ${error}`);

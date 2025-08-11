@@ -19,6 +19,7 @@
     "@types/node": "^22.10.1",
     "@types/node-cron": "^3.0.11",
     "@types/redis": "^4.0.10",
+    "@types/unzipper": "^0.10.10",
     "cd": "^0.3.3",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
@@ -37,6 +38,7 @@
     "lodash": "^4.17.21",
     "mongodb": "^6.10.0",
     "node-cron": "^3.0.3",
-    "redis": "^4.7.0"
+    "redis": "^4.7.0",
+    "unzipper": "^0.12.3"
   }
 }
