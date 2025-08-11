@@ -7,14 +7,6 @@ import { consumeDownloadTaskAsync } from './service/consumeService';
 import { mongoInitPromise } from './mongo/client';
 import { dailySendNewPhoto, sendDailyPhoto } from './service/dailySendPhoto';
 
-// 导入新的 bangumi 模块
-import {
-  dailyIncrementalUpdate,
-  yearlyUpdate,
-  biweeklyUpdate,
-  monthlyRotationUpdate
-} from './bangumi';
-
 // 重试配置
 const RETRY_DELAYS = [1000, 5000, 15000]; // 重试延迟时间（毫秒）
 
@@ -71,15 +63,4 @@ scheduleTask('29 19 * * *', 'daily sendNewPhoto', dailySendNewPhoto);
     console.error('Error in the consume download task:', err);
   }
 })();
-
-// Bangumi 同步任务（使用新架构）
-// 每日6点：增量更新 + 当年和下一年更新
-scheduleTask('0 6 * * *', 'daily incremental update', dailyIncrementalUpdate);
-scheduleTask('0 7 * * *', 'yearly update', yearlyUpdate);
-
-// 每7天更新：前两年条目更新（每周日9点执行）
-scheduleTask('0 9 * * 0', 'biweekly update', biweeklyUpdate);
-
-// 每周一下午2点：月份轮询更新
-scheduleTask('0 14 * * 1', 'monthly rotation update', monthlyRotationUpdate);
 
