@@ -5,8 +5,17 @@ import * as os from 'os';
 import AdmZip from 'adm-zip';
 import { createReadStream } from 'fs';
 import { createInterface } from 'readline';
-import { mongoInitPromise } from '../mongo/client';
-import { MongoClient } from 'mongodb';
+import { 
+  mongoInitPromise,
+  BangumiSubjectCollection,
+  BangumiCharacterCollection,
+  BangumiPersonCollection,
+  BangumiEpisodeCollection,
+  BangumiSubjectCharacterCollection,
+  BangumiSubjectPersonCollection,
+  BangumiPersonCharacterCollection,
+  BangumiSubjectRelationCollection
+} from '../mongo/client';
 
 // Bangumi Archive 数据处理服务
 export class BangumiArchiveService {
@@ -163,22 +172,19 @@ export class BangumiArchiveService {
    * 处理单个 jsonlines 文件
    */
   private async processJsonlinesFile(filePath: string, fileName: string): Promise<void> {
-    const collectionName = this.getCollectionName(fileName);
-    console.log(`开始处理文件 ${fileName} -> 集合 ${collectionName}`);
+    const collection = this.getCollection(fileName);
+    if (!collection) {
+      console.warn(`未找到文件 ${fileName} 对应的集合，跳过处理`);
+      return;
+    }
+
+    console.log(`开始处理文件 ${fileName} -> 集合 ${collection.collectionName}`);
 
     try {
       // 获取文件大小以估算处理时间
       const stats = fs.statSync(filePath);
       const fileSizeMB = (stats.size / (1024 * 1024)).toFixed(2);
       console.log(`文件大小: ${fileSizeMB} MB`);
-
-      // 连接到 MongoDB
-      const url = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${process.env.MONGO_HOST || 'mongo'}/chiwei?connectTimeoutMS=2000&authSource=admin`;
-      const client = new MongoClient(url);
-      await client.connect();
-      
-      const database = client.db("chiwei");
-      const collection = database.collection(collectionName);
 
       // 创建读取流
       const fileStream = createReadStream(filePath, { encoding: 'utf8' });
@@ -187,7 +193,7 @@ export class BangumiArchiveService {
         crlfDelay: Infinity
       });
 
-      const batchSize = 1000; // 批量插入大小
+      const batchSize = 500; // 批量 upsert 大小
       let batch: any[] = [];
       let totalProcessed = 0;
 
@@ -198,9 +204,12 @@ export class BangumiArchiveService {
             batch.push(document);
 
             if (batch.length >= batchSize) {
-              await collection.insertMany(batch, { ordered: false });
+              const uniqueFields = this.getUniqueFields(fileName);
+              const bulkOps = this.createBulkOperations(batch, uniqueFields);
+              const result = await collection.bulkWrite(bulkOps, { ordered: false });
               totalProcessed += batch.length;
-              console.log(`${collectionName}: 已处理 ${totalProcessed} 条记录`);
+              console.log(`${collection.collectionName}: 已处理 ${totalProcessed} 条记录 ` +
+                `(插入: ${result.insertedCount}, 更新: ${result.modifiedCount})`);
               batch = [];
             }
           } catch (parseError) {
@@ -211,12 +220,15 @@ export class BangumiArchiveService {
 
       // 处理剩余的批次
       if (batch.length > 0) {
-        await collection.insertMany(batch, { ordered: false });
+        const uniqueFields = this.getUniqueFields(fileName);
+        const bulkOps = this.createBulkOperations(batch, uniqueFields);
+        const result = await collection.bulkWrite(bulkOps, { ordered: false });
         totalProcessed += batch.length;
+        console.log(`${collection.collectionName}: 最终批次处理 ${batch.length} 条记录 ` +
+          `(插入: ${result.insertedCount}, 更新: ${result.modifiedCount})`);
       }
 
-      await client.close();
-      console.log(`${collectionName}: 总共处理了 ${totalProcessed} 条记录`);
+      console.log(`${collection.collectionName}: 总共处理了 ${totalProcessed} 条记录`);
 
     } catch (error) {
       console.error(`处理文件 ${fileName} 时发生错误:`, error);
@@ -225,16 +237,62 @@ export class BangumiArchiveService {
   }
 
   /**
-   * 根据文件名生成集合名称
+   * 根据文件名获取对应的集合实例
    */
-  private getCollectionName(fileName: string): string {
-    // 移除 .jsonlines 扩展名
-    const baseName = fileName.replace('.jsonlines', '');
+  private getCollection(fileName: string): any {
+    const collectionMap: { [key: string]: any } = {
+      'subject.jsonlines': BangumiSubjectCollection,
+      'character.jsonlines': BangumiCharacterCollection,
+      'person.jsonlines': BangumiPersonCollection,
+      'episode.jsonlines': BangumiEpisodeCollection,
+      'subject-characters.jsonlines': BangumiSubjectCharacterCollection,
+      'subject-persons.jsonlines': BangumiSubjectPersonCollection,
+      'person-characters.jsonlines': BangumiPersonCharacterCollection,
+      'subject-relations.jsonlines': BangumiSubjectRelationCollection
+    };
     
-    // 将文件名转换为适合的集合名称
-    // 例如: subject.jsonlines -> bangumi_archive_subjects
-    return `bangumi_archive_${baseName}s`;
+    return collectionMap[fileName];
   }
+
+  /**
+   * 根据文件名获取唯一标识符字段
+   */
+  private getUniqueFields(fileName: string): string[] {
+    const uniqueFieldsMap: { [key: string]: string[] } = {
+      'subject.jsonlines': ['id'],
+      'character.jsonlines': ['id'],
+      'person.jsonlines': ['id'],
+      'episode.jsonlines': ['id'],
+      'subject-characters.jsonlines': ['subject_id', 'character_id'],
+      'subject-persons.jsonlines': ['subject_id', 'person_id'],
+      'person-characters.jsonlines': ['person_id', 'character_id'],
+      'subject-relations.jsonlines': ['subject_id', 'relation_subject_id']
+    };
+    
+    return uniqueFieldsMap[fileName] || ['id'];
+  }
+
+  /**
+   * 创建 bulkWrite 操作数组
+   */
+  private createBulkOperations(batch: any[], uniqueFields: string[]): any[] {
+    return batch.map(document => {
+      const filter: any = {};
+      uniqueFields.forEach(field => {
+        filter[field] = document[field];
+      });
+      
+      return {
+        updateOne: {
+          filter,
+          update: { $set: document },
+          upsert: true
+        }
+      };
+    });
+  }
+
+
 
   /**
    * 清理临时目录
