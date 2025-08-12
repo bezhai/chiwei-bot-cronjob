@@ -1,23 +1,16 @@
 # 定义变量
-DOCKER_IMAGE_NAME = cronjob
+DOCKER_IMAGE_NAME = chiwiio/cronjob-work:latest
+
 DOCKER_CONTAINER_NAME = chiwei_cronjob
-DOCKER_PORT = 3000
 NETWORK = chiwei_bot_default
 
-# 拉取最新代码并重新构建镜像和容器
 # 默认目标：重新构建和运行
 .PHONY: all
-all: git-pull build run
+all: pull run
 
-# 拉取最新代码
-.PHONY: git-pull
-git-pull:
-	git pull
-
-# 构建 Docker 镜像
-.PHONY: build
-build:
-	docker build -t $(DOCKER_IMAGE_NAME) .
+.PHONY: pull
+pull:
+	docker pull $(DOCKER_IMAGE_NAME)
 
 # 停止并删除旧的容器（如果存在）
 .PHONY: stop
