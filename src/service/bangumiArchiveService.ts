@@ -2,7 +2,6 @@ import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import AdmZip from 'adm-zip';
 import * as unzipper from 'unzipper';
 import { createReadStream } from 'fs';
 import { createInterface } from 'readline';
@@ -17,6 +16,7 @@ import {
   BangumiPersonCharacterCollection,
   BangumiSubjectRelationCollection
 } from '../mongo/client';
+import { Collection } from 'mongodb';
 
 // Bangumi Archive 数据处理服务
 export class BangumiArchiveService {
@@ -240,7 +240,7 @@ export class BangumiArchiveService {
               const result = await collection.bulkWrite(bulkOps, { ordered: false });
               totalProcessed += batch.length;
               console.log(`${collection.collectionName}: 已处理 ${totalProcessed} 条记录 ` +
-                `(插入: ${result.insertedCount}, 更新: ${result.modifiedCount})`);
+                `(新增: ${result.upsertedCount}, 更新: ${result.modifiedCount}, 匹配: ${result.matchedCount})`);
               batch = [];
             }
           } catch (parseError) {
@@ -256,7 +256,7 @@ export class BangumiArchiveService {
         const result = await collection.bulkWrite(bulkOps, { ordered: false });
         totalProcessed += batch.length;
         console.log(`${collection.collectionName}: 最终批次处理 ${batch.length} 条记录 ` +
-          `(插入: ${result.insertedCount}, 更新: ${result.modifiedCount})`);
+          `(新增: ${result.upsertedCount}, 更新: ${result.modifiedCount}, 匹配: ${result.matchedCount})`);
       }
 
       console.log(`${collection.collectionName}: 总共处理了 ${totalProcessed} 条记录`);
@@ -270,8 +270,8 @@ export class BangumiArchiveService {
   /**
    * 根据文件名获取对应的集合实例
    */
-  private getCollection(fileName: string): any {
-    const collectionMap: { [key: string]: any } = {
+  private getCollection(fileName: string): Collection | null {
+    const collectionMap: { [key: string]: Collection } = {
       'subject.jsonlines': BangumiSubjectCollection,
       'character.jsonlines': BangumiCharacterCollection,
       'person.jsonlines': BangumiPersonCollection,

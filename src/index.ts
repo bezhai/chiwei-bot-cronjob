@@ -55,8 +55,7 @@ scheduleTask('0 18 * * *', 'daily sendPhoto', sendDailyPhoto);
 scheduleTask('29 19 * * *', 'daily sendNewPhoto', dailySendNewPhoto);
 
 // 定时任务：Bangumi Archive 数据同步 (每周三上午7点)
-scheduleTask('5 2 * * 2', 'bangumi archive sync', syncBangumiArchive); // 临时改这个时间
-
+scheduleTask('0 7 * * 3', 'bangumi archive sync', syncBangumiArchive);
 // 异步消费任务
 (async () => {
   await mongoInitPromise;  // 等待 MongoDB 初始化完成
