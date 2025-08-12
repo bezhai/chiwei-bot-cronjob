@@ -94,7 +94,7 @@ export const mongoInitPromise = (async () => {
     BangumiSubjectRelationCollection = database.collection("bangumi_archive_subject_relations");
 
     // 创建 Bangumi Archive 索引
-    await createBangumiIndexes(database);
+    // await createBangumiIndexes(database);
 
     console.log("MongoDB initialization completed.");
   } catch (err) {
